@@ -497,11 +497,17 @@ th {
   }
 
   .sidebar,
-  .topbar,
+  .topbar-actions,
   .toast,
   .btn,
   .no-print {
     display: none !important;
+  }
+
+  .topbar {
+    border-bottom: 2px solid #0f172a !important;
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 16px !important;
   }
 
   .view-container {

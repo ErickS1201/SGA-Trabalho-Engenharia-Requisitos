@@ -1,6 +1,16 @@
 const API_BASE = "http://localhost:8080/api";
 let apiOnline = false;
 
+function escapeHTML(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const DEFAULT_DB = {
   usuarios: [
     { id: 1, nome: "Cailan Abade da Silva Moreira", cpf: "12345678900", matricula: "2026001", email: "cailan@ucsal.edu.br", senha: "123", perfil: "ALUNO", ativo: true },
@@ -18,25 +28,26 @@ const DEFAULT_DB = {
     { id: 5, codigo: "BES401", nome: "Arquitetura de Software", cargaHoraria: 60, preRequisito: "Engenharia de Requisitos" }
   ],
   turmas: [
-    { id: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", professorNome: "Elton Figueiredo", horario: "SEG 19:00 - 21:40", vagasTotais: 40, vagasDisponiveis: 12, preRequisitoNome: "Introdução à Engenharia de Software", preRequisitoCumprido: true },
-    { id: 11, codigo: "BES305-A", disciplinaNome: "Banco de Dados I", professorNome: "Ana Paula Rocha", horario: "TER 19:00 - 21:40", vagasTotais: 35, vagasDisponiveis: 5, preRequisitoNome: "Nenhum", preRequisitoCumprido: true },
-    { id: 12, codigo: "BES306-B", disciplinaNome: "Estrutura de Dados", professorNome: "Roberto Lima", horario: "QUI 19:00 - 21:40", vagasTotais: 30, vagasDisponiveis: 0, preRequisitoNome: "Algoritmos", preRequisitoCumprido: true },
-    { id: 13, codigo: "BES401-A", disciplinaNome: "Arquitetura de Software", professorNome: "Elton Figueiredo", horario: "SEX 19:00 - 21:40", vagasTotais: 35, vagasDisponiveis: 18, preRequisitoNome: "Engenharia de Requisitos", preRequisitoCumprido: false }
+    { id: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", professorNome: "Elton Figueiredo da Silva", horario: "SEG 19:00 - 21:40", vagasTotais: 40, vagasDisponiveis: 12, preRequisitoNome: "Introdução à Engenharia de Software" },
+    { id: 11, codigo: "BES305-A", disciplinaNome: "Banco de Dados I", professorNome: "Ana Paula Rocha", horario: "TER 19:00 - 21:40", vagasTotais: 35, vagasDisponiveis: 5, preRequisitoNome: "Nenhum" },
+    { id: 12, codigo: "BES306-B", disciplinaNome: "Estrutura de Dados", professorNome: "Roberto Lima", horario: "QUI 19:00 - 21:40", vagasTotais: 30, vagasDisponiveis: 0, preRequisitoNome: "Nenhum" },
+    { id: 13, codigo: "BES401-A", disciplinaNome: "Arquitetura de Software", professorNome: "Elton Figueiredo da Silva", horario: "SEX 19:00 - 21:40", vagasTotais: 35, vagasDisponiveis: 18, preRequisitoNome: "Engenharia de Requisitos" }
   ],
   matriculas: [
-    { id: 101, alunoId: 1, alunoNome: "Cailan Abade da Silva Moreira", turmaId: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", nota1: 8.5, nota2: 7.5, percentualFrequencia: 92, mediaFinal: 8.0, situacao: "APROVADO", revisaoSolicitada: false, justificativaPrazo: "" },
-    { id: 102, alunoId: 1, alunoNome: "Cailan Abade da Silva Moreira", turmaId: 11, codigo: "BES305-A", disciplinaNome: "Banco de Dados I", nota1: 6.5, nota2: 5.5, percentualFrequencia: 85, mediaFinal: 6.0, situacao: "EXAME_FINAL", revisaoSolicitada: false, justificativaPrazo: "" },
-    { id: 103, alunoId: 2, alunoNome: "Erick José Reis de Santana", turmaId: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", nota1: 9.0, nota2: 8.0, percentualFrequencia: 68, mediaFinal: 8.5, situacao: "REPROVADO_FREQUENCIA", revisaoSolicitada: false, justificativaPrazo: "" }
+    { id: 101, alunoId: 1, alunoNome: "Cailan Abade da Silva Moreira", turmaId: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", nota1: 8.5, nota2: 7.5, notaFinal: null, percentualFrequencia: 92, mediaFinal: 8.0, situacao: "APROVADO", revisaoSolicitada: false, justificativaPrazo: "" },
+    { id: 102, alunoId: 1, alunoNome: "Cailan Abade da Silva Moreira", turmaId: 11, codigo: "BES305-A", disciplinaNome: "Banco de Dados I", nota1: 6.5, nota2: 5.5, notaFinal: null, percentualFrequencia: 85, mediaFinal: 6.0, situacao: "EXAME_FINAL", revisaoSolicitada: false, justificativaPrazo: "" },
+    { id: 103, alunoId: 2, alunoNome: "Erick José Reis de Santana", turmaId: 10, codigo: "BES304-A", disciplinaNome: "Engenharia de Requisitos", nota1: 9.0, nota2: 8.0, notaFinal: null, percentualFrequencia: 68, mediaFinal: 8.5, situacao: "REPROVADO_FREQUENCIA", revisaoSolicitada: false, justificativaPrazo: "" }
   ],
   avaliacoesDocentes: [
-    { id: 1, turma: "BES304-A - Engenharia de Requisitos", professor: "Elton Figueiredo", didatica: 5, pontualidade: 5, dominio: 5, comentario: "Excelente abordagem prática com projetos reais." },
+    { id: 1, turma: "BES304-A - Engenharia de Requisitos", professor: "Elton Figueiredo da Silva", didatica: 5, pontualidade: 5, dominio: 5, comentario: "Excelente abordagem prática com projetos reais." },
     { id: 2, turma: "BES305-A - Banco de Dados I", professor: "Ana Paula Rocha", didatica: 4, pontualidade: 5, dominio: 5, comentario: "Boas listas de exercícios de modelagem." }
   ],
+  avaliacoesParticipacao: [],
   denuncias: [
     { protocolo: "OUV-2026-8492", autorId: 1, categoria: "Infraestrutura", anonimo: true, descricao: "Projetor da sala 204 apresentando falha intermitente no turno noturno.", status: "Em Análise", data: "14/11/2026" }
   ],
   avisos: [
-    { id: 1, autor: "Prof. Elton Figueiredo", perfilAutor: "PROFESSOR", turmaCodigo: "BES304-A", destino: "BES304-A (Engenharia de Requisitos)", titulo: "Entrega Final da Unidade II", mensagem: "Lembrando que o PDF consolidado deve ser enviado até amanhã às 23:59 no portal.", data: "16/11/2026" },
+    { id: 1, autor: "Elton Figueiredo da Silva", perfilAutor: "PROFESSOR", turmaCodigo: "BES304-A", destino: "BES304-A (Engenharia de Requisitos)", titulo: "Entrega Final da Unidade II", mensagem: "Lembrando que o PDF consolidado deve ser enviado até amanhã às 23:59 no portal.", data: "16/11/2026" },
     { id: 2, autor: "Secretaria Acadêmica", perfilAutor: "SECRETARIA", turmaCodigo: "GERAL", destino: "Toda a Instituição", titulo: "Renovação de Matrícula 2027.1", mensagem: "O calendário oficial de rematrícula já está disponível para consulta.", data: "15/11/2026" }
   ],
   calendario: [
@@ -51,28 +62,41 @@ const DEFAULT_DB = {
 };
 
 function getDB() {
-  const saved = localStorage.getItem("sga_db_v4");
+  const saved = localStorage.getItem("sga_db_v7");
   if (!saved) {
-    localStorage.setItem("sga_db_v4", JSON.stringify(DEFAULT_DB));
+    localStorage.setItem("sga_db_v7", JSON.stringify(DEFAULT_DB));
     return JSON.parse(JSON.stringify(DEFAULT_DB));
   }
-  return JSON.parse(saved);
+  const parsed = JSON.parse(saved);
+  if (!Array.isArray(parsed.avaliacoesParticipacao)) parsed.avaliacoesParticipacao = [];
+  return parsed;
 }
 
 function saveDB(db) {
-  localStorage.setItem("sga_db_v4", JSON.stringify(db));
+  localStorage.setItem("sga_db_v7", JSON.stringify(db));
 }
 
 function resetarDadosDemo() {
-  localStorage.removeItem("sga_db_v4");
+  localStorage.removeItem("sga_db_v7");
+  localStorage.removeItem("sga_login_lock");
   showToast("Base de dados restaurada para o estado inicial!");
   renderMenu();
 }
 
 let currentUser = getDB().usuarios[0];
 let currentView = "matricula";
-let loginAttempts = 0;
-let lockUntil = 0;
+
+function getLockState() {
+  try {
+    return JSON.parse(localStorage.getItem("sga_login_lock")) || { attempts: 0, lockUntil: 0 };
+  } catch (_) {
+    return { attempts: 0, lockUntil: 0 };
+  }
+}
+
+function setLockState(state) {
+  localStorage.setItem("sga_login_lock", JSON.stringify(state));
+}
 
 async function checkBackendHealth() {
   try {
@@ -108,7 +132,7 @@ function validarHashPublico() {
   const found = db.documentosEmitidos.find(d => d.hash === code);
   const box = document.getElementById("public-hash-result");
   if (found) {
-    box.innerHTML = `<div class="alert alert-success">Autêntico: <strong>${found.tipo}</strong> — ${found.aluno} (${found.data}).</div>`;
+    box.innerHTML = `<div class="alert alert-success">Autêntico: <strong>${escapeHTML(found.tipo)}</strong> — ${escapeHTML(found.aluno)} (${escapeHTML(found.data)}).</div>`;
   } else {
     box.innerHTML = `<div class="alert alert-danger">Código inválido ou não localizado na base institucional.</div>`;
   }
@@ -120,11 +144,13 @@ function validarHashPublico() {
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const feedback = document.getElementById("login-feedback");
+  const lock = getLockState();
   const now = Date.now();
 
-  if (now < lockUntil) {
+  if (now < lock.lockUntil) {
+    const mins = Math.ceil((lock.lockUntil - now) / 60000);
     feedback.className = "alert alert-danger";
-    feedback.textContent = "Conta bloqueada temporariamente por 15 minutos devido a 3 tentativas incorretas.";
+    feedback.textContent = `Conta bloqueada temporariamente por ${mins} min devido a 3 tentativas incorretas.`;
     return;
   }
 
@@ -140,7 +166,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
       });
       if (resp.ok) {
         const user = await resp.json();
-        loginAttempts = 0;
+        setLockState({ attempts: 0, lockUntil: 0 });
         feedback.className = "alert hidden";
         iniciarSessao(user);
         return;
@@ -152,18 +178,19 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   const found = db.usuarios.find(u => (u.cpf === login || u.matricula === login) && u.ativo);
 
   if (found && (found.senha === senha || senha === "123")) {
-    loginAttempts = 0;
+    setLockState({ attempts: 0, lockUntil: 0 });
     feedback.className = "alert hidden";
     iniciarSessao(found);
   } else {
-    loginAttempts++;
-    if (loginAttempts >= 3) {
-      lockUntil = Date.now() + 15 * 60 * 1000;
+    const attempts = lock.attempts + 1;
+    if (attempts >= 3) {
+      setLockState({ attempts: 0, lockUntil: Date.now() + 15 * 60 * 1000 });
       feedback.className = "alert alert-danger";
       feedback.textContent = "Limite de 3 tentativas atingido. Acesso bloqueado por 15 minutos.";
     } else {
+      setLockState({ attempts, lockUntil: 0 });
       feedback.className = "alert alert-danger";
-      feedback.textContent = `Credenciais inválidas ou usuário inativo. Tentativa ${loginAttempts}/3.`;
+      feedback.textContent = `Credenciais inválidas ou usuário inativo. Tentativa ${attempts}/3.`;
     }
   }
 });
@@ -264,8 +291,8 @@ function navigate(viewId) {
 
   const titles = {
     usuarios: ["Gestão de Usuários", "Cadastro, edição e ativação/inativação de contas sem duplicidade"],
-    matricula: ["Matrícula em Disciplinas e Turmas", "Inscrição semestral com validação automática de vagas e pré-requisitos"],
-    notas: ["Lançamento de Notas e Frequência", "Cálculo automático de média, trava por falta (< 75%) e justificativa fora do prazo"],
+    matricula: ["Matrícula em Disciplinas e Turmas", "Inscrição semestral com validação de vagas, pré-requisitos e choque de horário"],
+    notas: ["Lançamento de Notas e Frequência", "Cálculo de média, trava por falta (< 75%), exame final e justificativa fora do prazo"],
     boletim: ["Boletim e Histórico Escolar", "Consulta de desempenho e solicitação formal de revisão de nota"],
     documentos: ["Emissão de Declarações e Validação", "Geração de documentos oficiais com código único de autenticidade"],
     grade: ["Gestão de Disciplinas e Oferta de Turmas", "Controle de grade curricular, abertura de turmas com vagas e proteção de matrículas ativas"],
@@ -374,10 +401,10 @@ async function renderUsuarios() {
           <tbody>
             ${lista.map(u => `
               <tr>
-                <td>${u.nome}<br><small style="color:#64748b">${u.email}</small></td>
-                <td>${u.cpf}</td>
-                <td>${u.matricula}</td>
-                <td><span class="badge badge-neutral">${u.perfil}</span></td>
+                <td>${escapeHTML(u.nome)}<br><small style="color:#64748b">${escapeHTML(u.email)}</small></td>
+                <td>${escapeHTML(u.cpf)}</td>
+                <td>${escapeHTML(u.matricula)}</td>
+                <td><span class="badge badge-neutral">${escapeHTML(u.perfil)}</span></td>
                 <td><span class="badge ${u.ativo ? "badge-success" : "badge-danger"}">${u.ativo ? "Ativo" : "Inativo"}</span></td>
                 <td>
                   <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStatusUsuario(${u.id})">
@@ -451,6 +478,14 @@ async function toggleStatusUsuario(id) {
 // ==========================================
 let alunoSelecionadoMatricula = 1;
 
+function cumpriuPreRequisito(db, alunoId, preRequisitoNome) {
+  if (!preRequisitoNome || preRequisitoNome === "Nenhum") return true;
+  if (preRequisitoNome === "Introdução à Engenharia de Software") return true;
+  return db.matriculas.some(
+    m => m.alunoId === alunoId && m.disciplinaNome === preRequisitoNome && m.situacao === "APROVADO"
+  );
+}
+
 async function renderMatricula() {
   const db = getDB();
   const alunos = db.usuarios.filter(u => u.perfil === "ALUNO" && u.ativo);
@@ -478,7 +513,7 @@ async function renderMatricula() {
       <div class="form-group" style="margin-bottom:0">
         <label>Aluno selecionado para matrícula (Visão Secretaria / Admin):</label>
         <select onchange="alunoSelecionadoMatricula = parseInt(this.value, 10); renderMatricula();">
-          ${alunos.map(a => `<option value="${a.id}" ${a.id === alunoSelecionadoMatricula ? "selected" : ""}>${a.nome} (Matrícula: ${a.matricula})</option>`).join("")}
+          ${alunos.map(a => `<option value="${a.id}" ${a.id === alunoSelecionadoMatricula ? "selected" : ""}>${escapeHTML(a.nome)} (Matrícula: ${escapeHTML(a.matricula)})</option>`).join("")}
         </select>
       </div>
     </div>
@@ -504,25 +539,42 @@ async function renderMatricula() {
           </thead>
           <tbody>
             ${turmas.map(t => {
-              const jaMatriculado = minhas.some(m => m.turmaId === t.id);
+              const jaMatriculadoTurma = minhas.some(m => m.turmaId === t.id);
+              const jaCursouDisciplina = minhas.some(m => m.disciplinaNome === t.disciplinaNome);
+              const preOk = cumpriuPreRequisito(db, alunoSelecionadoMatricula, t.preRequisitoNome);
+              const semVagas = t.vagasDisponiveis <= 0;
+
+              let acaoHtml = `<button type="button" class="btn btn-primary btn-sm" onclick="efetivarMatricula(${t.id})">Matricular</button>`;
+              if (jaMatriculadoTurma) {
+                acaoHtml = `<span class="badge badge-neutral">Matriculado</span>`;
+              } else if (jaCursouDisciplina) {
+                acaoHtml = `<span class="badge badge-neutral">Já inscrito/aprovado</span>`;
+              } else if (semVagas) {
+                acaoHtml = `<button type="button" class="btn btn-secondary btn-sm" disabled title="Sem vagas">Lotada</button>`;
+              } else if (!preOk) {
+                acaoHtml = `<button type="button" class="btn btn-secondary btn-sm" onclick="efetivarMatricula(${t.id})" title="Pré-requisito pendente">Bloqueada</button>`;
+              }
+
               return `
                 <tr>
-                  <td><strong>${t.codigo}</strong></td>
-                  <td>${t.disciplinaNome}</td>
-                  <td>${t.professorNome}</td>
-                  <td>${t.horario}</td>
-                  <td>${t.preRequisitoNome}</td>
+                  <td><strong>${escapeHTML(t.codigo)}</strong></td>
+                  <td>${escapeHTML(t.disciplinaNome)}</td>
+                  <td>${escapeHTML(t.professorNome)}</td>
+                  <td>${escapeHTML(t.horario)}</td>
                   <td>
-                    <span class="badge ${t.vagasDisponiveis > 0 ? "badge-success" : "badge-danger"}">
+                    ${escapeHTML(t.preRequisitoNome)}
+                    ${t.preRequisitoNome !== "Nenhum"
+                      ? (preOk
+                        ? `<br><span class="badge badge-success">Cumprido</span>`
+                        : `<br><span class="badge badge-danger">Pendente</span>`)
+                      : ""}
+                  </td>
+                  <td>
+                    <span class="badge ${!semVagas ? "badge-success" : "badge-danger"}">
                       ${t.vagasDisponiveis} / ${t.vagasTotais}
                     </span>
                   </td>
-                  <td>
-                    ${jaMatriculado
-                      ? `<span class="badge badge-neutral">Matriculado</span>`
-                      : `<button type="button" class="btn btn-primary btn-sm" onclick="efetivarMatricula(${t.id})">Matricular</button>`
-                    }
-                  </td>
+                  <td>${acaoHtml}</td>
                 </tr>
               `;
             }).join("")}
@@ -547,9 +599,9 @@ async function renderMatricula() {
               ? `<tr><td colspan="3" style="color:#64748b">Nenhuma matrícula registrada para este aluno.</td></tr>`
               : minhas.map(m => `
                 <tr>
-                  <td>${m.codigo}</td>
-                  <td>${m.disciplinaNome}</td>
-                  <td><span class="badge badge-success">${m.situacao}</span></td>
+                  <td>${escapeHTML(m.codigo)}</td>
+                  <td>${escapeHTML(m.disciplinaNome)}</td>
+                  <td>${badgeSituacao(m.situacao)}</td>
                 </tr>
               `).join("")
             }
@@ -586,8 +638,23 @@ async function efetivarMatricula(turmaId) {
     showToast("Matrícula bloqueada: Não há mais vagas disponíveis nesta turma.");
     return;
   }
-  if (turma.preRequisitoCumprido === false) {
+  if (!cumpriuPreRequisito(db, aluno.id, turma.preRequisitoNome)) {
     showToast(`Matrícula bloqueada: Pré-requisito pendente (${turma.preRequisitoNome}).`);
+    return;
+  }
+
+  const minhasMats = db.matriculas.filter(m => m.alunoId === aluno.id);
+  if (minhasMats.some(m => m.disciplinaNome === turma.disciplinaNome)) {
+    showToast(`Matrícula bloqueada: Aluno já possui vínculo em ${turma.disciplinaNome}.`);
+    return;
+  }
+
+  const choque = minhasMats.find(m => {
+    const tExistente = db.turmas.find(x => x.id === m.turmaId);
+    return tExistente && tExistente.horario.trim().toUpperCase() === turma.horario.trim().toUpperCase();
+  });
+  if (choque) {
+    showToast(`Matrícula bloqueada: Choque de horário com ${choque.codigo} (${turma.horario}).`);
     return;
   }
 
@@ -601,6 +668,7 @@ async function efetivarMatricula(turmaId) {
     disciplinaNome: turma.disciplinaNome,
     nota1: 0,
     nota2: 0,
+    notaFinal: null,
     percentualFrequencia: 100,
     mediaFinal: 0,
     situacao: "CURSANDO",
@@ -613,17 +681,28 @@ async function efetivarMatricula(turmaId) {
 }
 
 // ==========================================
-// 3. LANÇAMENTO DE NOTAS + JUSTIFICATIVA FORA DO PRAZO
+// 3. LANÇAMENTO DE NOTAS
 // ==========================================
 let turmaFiltroNotas = "TODAS";
 let lancamentoForaPrazo = false;
+let textoJustificativaAtual = "";
 
 function renderNotas() {
   const db = getDB();
-  const turmasDisponiveis = db.turmas;
+
+  const turmasDisponiveis = currentUser.perfil === "PROFESSOR"
+    ? db.turmas.filter(t => t.professorNome === currentUser.nome)
+    : db.turmas;
+
+  const codigosPermitidos = turmasDisponiveis.map(t => t.codigo);
+  if (turmaFiltroNotas !== "TODAS" && !codigosPermitidos.includes(turmaFiltroNotas)) {
+    turmaFiltroNotas = "TODAS";
+  }
+
+  const matriculasPermitidas = db.matriculas.filter(m => codigosPermitidos.includes(m.codigo));
   const registros = turmaFiltroNotas === "TODAS"
-    ? db.matriculas
-    : db.matriculas.filter(m => m.codigo === turmaFiltroNotas);
+    ? matriculasPermitidas
+    : matriculasPermitidas.filter(m => m.codigo === turmaFiltroNotas);
 
   document.getElementById("view-container").innerHTML = `
     <div class="card">
@@ -635,8 +714,8 @@ function renderNotas() {
             Simular Lançamento Fora do Prazo
           </label>
           <select style="width:auto" onchange="turmaFiltroNotas = this.value; renderNotas();">
-            <option value="TODAS" ${turmaFiltroNotas === "TODAS" ? "selected" : ""}>Todas as Turmas</option>
-            ${turmasDisponiveis.map(t => `<option value="${t.codigo}" ${turmaFiltroNotas === t.codigo ? "selected" : ""}>${t.codigo} - ${t.disciplinaNome}</option>`).join("")}
+            <option value="TODAS" ${turmaFiltroNotas === "TODAS" ? "selected" : ""}>Minhas Turmas (${turmasDisponiveis.length})</option>
+            ${turmasDisponiveis.map(t => `<option value="${escapeHTML(t.codigo)}" ${turmaFiltroNotas === t.codigo ? "selected" : ""}>${escapeHTML(t.codigo)} - ${escapeHTML(t.disciplinaNome)}</option>`).join("")}
           </select>
         </div>
       </div>
@@ -644,12 +723,12 @@ function renderNotas() {
       ${lancamentoForaPrazo ? `
         <div class="form-group" style="background:#fef3c7;padding:12px;border-radius:6px;border:1px solid #f59e0b">
           <label style="color:#92400e">Justificativa Obrigatória (Lançamento Extemporâneo) *</label>
-          <input type="text" id="justificativa-prazo" placeholder="Informe o motivo do lançamento fora do prazo oficial do calendário..." />
+          <input type="text" id="justificativa-prazo" value="${escapeHTML(textoJustificativaAtual)}" oninput="textoJustificativaAtual = this.value" placeholder="Informe o motivo do lançamento fora do prazo oficial do calendário..." />
         </div>
       ` : ""}
 
       <p class="subtitle" style="margin-bottom:14px">
-        Média = (N1 + N2) / 2. Frequência inferior a 75% reprova automaticamente por falta e bloqueia edição de notas.
+        Notas entre 0 e 10. Frequência inferior a 75% reprova automaticamente por falta e bloqueia edição de notas. Média entre 4,0 e 6,9 habilita Exame Final.
       </p>
       <div class="table-wrap">
         <table>
@@ -657,9 +736,10 @@ function renderNotas() {
             <tr>
               <th>Aluno</th>
               <th>Disciplina</th>
-              <th style="width:90px">Nota 1</th>
-              <th style="width:90px">Nota 2</th>
-              <th style="width:105px">Freq. (%)</th>
+              <th style="width:82px">Nota 1</th>
+              <th style="width:82px">Nota 2</th>
+              <th style="width:86px">Ex. Final</th>
+              <th style="width:92px">Freq. (%)</th>
               <th>Média</th>
               <th>Situação</th>
               <th>Ação</th>
@@ -667,18 +747,21 @@ function renderNotas() {
           </thead>
           <tbody>
             ${registros.length === 0
-              ? `<tr><td colspan="8" style="color:#64748b">Nenhum aluno matriculado nesta turma.</td></tr>`
+              ? `<tr><td colspan="9" style="color:#64748b">Nenhum aluno matriculado nesta turma.</td></tr>`
               : registros.map(m => {
                 const bloqueadoFalta = m.percentualFrequencia < 75;
+                const mediaBase = (m.nota1 + m.nota2) / 2;
+                const habilitaExame = !bloqueadoFalta && mediaBase >= 4.0 && mediaBase < 7.0;
                 return `
                   <tr>
                     <td>
-                      <strong>${m.alunoNome}</strong>
-                      ${m.justificativaPrazo ? `<br><small style="color:#b45309">Justificativa: ${m.justificativaPrazo}</small>` : ""}
+                      <strong>${escapeHTML(m.alunoNome)}</strong>
+                      ${m.justificativaPrazo ? `<br><small style="color:#b45309">Justificativa: ${escapeHTML(m.justificativaPrazo)}</small>` : ""}
                     </td>
-                    <td>${m.codigo} - ${m.disciplinaNome}</td>
-                    <td><input type="number" step="0.1" min="0" max="10" id="n1-${m.id}" value="${m.nota1}" ${bloqueadoFalta ? "disabled title='Bloqueado por reprovação por falta'" : ""} /></td>
-                    <td><input type="number" step="0.1" min="0" max="10" id="n2-${m.id}" value="${m.nota2}" ${bloqueadoFalta ? "disabled title='Bloqueado por reprovação por falta'" : ""} /></td>
+                    <td>${escapeHTML(m.codigo)} - ${escapeHTML(m.disciplinaNome)}</td>
+                    <td><input type="number" step="0.1" min="0" max="10" id="n1-${m.id}" value="${m.nota1}" ${bloqueadoFalta ? "disabled" : ""} /></td>
+                    <td><input type="number" step="0.1" min="0" max="10" id="n2-${m.id}" value="${m.nota2}" ${bloqueadoFalta ? "disabled" : ""} /></td>
+                    <td><input type="number" step="0.1" min="0" max="10" id="nf-${m.id}" value="${m.notaFinal !== null && m.notaFinal !== undefined ? m.notaFinal : ""}" placeholder="-" ${!habilitaExame ? "disabled title='Disponível apenas para média entre 4,0 e 6,9'" : ""} /></td>
                     <td><input type="number" step="1" min="0" max="100" id="freq-${m.id}" value="${m.percentualFrequencia}" /></td>
                     <td><strong>${m.mediaFinal.toFixed(1)}</strong></td>
                     <td>${badgeSituacao(m.situacao)}</td>
@@ -699,14 +782,13 @@ function badgeSituacao(sit) {
   if (sit === "EXAME_FINAL") return `<span class="badge badge-warning">EXAME FINAL</span>`;
   if (sit === "REPROVADO_FREQUENCIA") return `<span class="badge badge-danger">REPROV. FALTA</span>`;
   if (sit === "REPROVADO_NOTA") return `<span class="badge badge-danger">REPROV. NOTA</span>`;
-  return `<span class="badge badge-neutral">${sit}</span>`;
+  return `<span class="badge badge-neutral">${escapeHTML(sit)}</span>`;
 }
 
 async function salvarAvaliacao(matriculaId) {
   let justificativa = "";
   if (lancamentoForaPrazo) {
-    const campoJust = document.getElementById("justificativa-prazo");
-    justificativa = campoJust ? campoJust.value.trim() : "";
+    justificativa = textoJustificativaAtual.trim();
     if (!justificativa) {
       showToast("Bloqueado: Preencha a justificativa obrigatória para lançamento fora do prazo!");
       return;
@@ -718,14 +800,30 @@ async function salvarAvaliacao(matriculaId) {
   if (!mat) return;
 
   const percentualFrequencia = parseFloat(document.getElementById(`freq-${matriculaId}`).value);
-  const freqValida = isNaN(percentualFrequencia) ? 0 : percentualFrequencia;
+  const freqValida = isNaN(percentualFrequencia) ? -1 : percentualFrequencia;
 
   const nota1 = mat.percentualFrequencia < 75 && freqValida < 75
     ? mat.nota1
-    : (parseFloat(document.getElementById(`n1-${matriculaId}`).value) || 0);
+    : parseFloat(document.getElementById(`n1-${matriculaId}`).value);
   const nota2 = mat.percentualFrequencia < 75 && freqValida < 75
     ? mat.nota2
-    : (parseFloat(document.getElementById(`n2-${matriculaId}`).value) || 0);
+    : parseFloat(document.getElementById(`n2-${matriculaId}`).value);
+
+  const nfEl = document.getElementById(`nf-${matriculaId}`);
+  const nfRaw = nfEl && !nfEl.disabled && nfEl.value !== "" ? parseFloat(nfEl.value) : null;
+
+  if (isNaN(nota1) || nota1 < 0 || nota1 > 10 || isNaN(nota2) || nota2 < 0 || nota2 > 10) {
+    showToast("Bloqueado: As notas N1 e N2 devem estar entre 0,0 e 10,0!");
+    return;
+  }
+  if (nfRaw !== null && (isNaN(nfRaw) || nfRaw < 0 || nfRaw > 10)) {
+    showToast("Bloqueado: A nota do Exame Final deve estar entre 0,0 e 10,0!");
+    return;
+  }
+  if (freqValida < 0 || freqValida > 100) {
+    showToast("Bloqueado: A frequência deve estar entre 0% e 100%!");
+    return;
+  }
 
   if (apiOnline) {
     try {
@@ -740,19 +838,40 @@ async function salvarAvaliacao(matriculaId) {
   mat.nota1 = nota1;
   mat.nota2 = nota2;
   mat.percentualFrequencia = freqValida;
-  mat.mediaFinal = (nota1 + nota2) / 2;
   if (justificativa) mat.justificativaPrazo = justificativa;
 
+  const mediaSemestral = (nota1 + nota2) / 2;
+
   if (freqValida < 75) {
+    mat.mediaFinal = mediaSemestral;
+    mat.notaFinal = null;
     mat.situacao = "REPROVADO_FREQUENCIA";
     showToast("Atenção: Frequência < 75%. Aluno reprovado por falta e notas bloqueadas!");
-  } else if (mat.mediaFinal >= 7.0) {
+  } else if (mediaSemestral >= 7.0) {
+    mat.mediaFinal = mediaSemestral;
+    mat.notaFinal = null;
     mat.situacao = "APROVADO";
-    showToast("Notas salvas: Aluno APROVADO.");
-  } else if (mat.mediaFinal >= 4.0) {
-    mat.situacao = "EXAME_FINAL";
-    showToast("Notas salvas: Aluno em EXAME FINAL.");
+    showToast("Notas salvas: Aluno APROVADO por média.");
+  } else if (mediaSemestral >= 4.0) {
+    if (nfRaw !== null) {
+      mat.notaFinal = nfRaw;
+      mat.mediaFinal = (mediaSemestral + nfRaw) / 2;
+      if (mat.mediaFinal >= 5.0) {
+        mat.situacao = "APROVADO";
+        showToast("Exame Final lançado: Aluno APROVADO!");
+      } else {
+        mat.situacao = "REPROVADO_NOTA";
+        showToast("Exame Final lançado: Aluno REPROVADO POR NOTA.");
+      }
+    } else {
+      mat.notaFinal = null;
+      mat.mediaFinal = mediaSemestral;
+      mat.situacao = "EXAME_FINAL";
+      showToast("Notas salvas: Aluno em EXAME FINAL.");
+    }
   } else {
+    mat.mediaFinal = mediaSemestral;
+    mat.notaFinal = null;
     mat.situacao = "REPROVADO_NOTA";
     showToast("Notas salvas: Aluno REPROVADO POR NOTA.");
   }
@@ -770,7 +889,7 @@ function renderBoletim() {
 
   document.getElementById("view-container").innerHTML = `
     <div class="card">
-      <div class="card-header"><h3>Boletim Acadêmico — ${currentUser.nome} (2026.2)</h3></div>
+      <div class="card-header"><h3>Boletim Acadêmico — ${escapeHTML(currentUser.nome)} (2026.2)</h3></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -779,6 +898,7 @@ function renderBoletim() {
               <th>Disciplina</th>
               <th>N1</th>
               <th>N2</th>
+              <th>Ex. Final</th>
               <th>Média</th>
               <th>Frequência</th>
               <th>Situação</th>
@@ -788,17 +908,20 @@ function renderBoletim() {
           <tbody>
             ${minhas.map(m => `
               <tr>
-                <td>${m.codigo}</td>
-                <td>${m.disciplinaNome}</td>
+                <td>${escapeHTML(m.codigo)}</td>
+                <td>${escapeHTML(m.disciplinaNome)}</td>
                 <td>${m.nota1.toFixed(1)}</td>
                 <td>${m.nota2.toFixed(1)}</td>
+                <td>${m.notaFinal !== null && m.notaFinal !== undefined ? m.notaFinal.toFixed(1) : "-"}</td>
                 <td><strong>${m.mediaFinal.toFixed(1)}</strong></td>
                 <td>${m.percentualFrequencia}%</td>
                 <td>${badgeSituacao(m.situacao)}</td>
                 <td>
-                  ${m.revisaoSolicitada
-                    ? `<span class="badge badge-warning">Revisão em Análise</span>`
-                    : `<button type="button" class="btn btn-secondary btn-sm" onclick="solicitarRevisao(${m.id})">Pedir Revisão</button>`
+                  ${m.situacao === "CURSANDO"
+                    ? `<span style="color:#94a3b8;font-size:0.8rem">Aguardando notas</span>`
+                    : m.revisaoSolicitada
+                      ? `<span class="badge badge-warning">Revisão em Análise</span>`
+                      : `<button type="button" class="btn btn-secondary btn-sm" onclick="solicitarRevisao(${m.id})">Pedir Revisão</button>`
                   }
                 </td>
               </tr>
@@ -823,6 +946,23 @@ function solicitarRevisao(id) {
 // 5. EMISSÃO E VALIDAÇÃO DE DECLARAÇÕES
 // ==========================================
 let alunoSelecionadoDoc = 1;
+let tipoDocumentoAtual = "Declaração de Matrícula";
+
+function montarTextoDocumento(db, alunoAlvo, tipo) {
+  const mats = db.matriculas.filter(m => m.alunoId === alunoAlvo.id);
+  if (tipo === "Histórico Escolar Parcial") {
+    const linhas = mats.map(m => `${escapeHTML(m.codigo)} (${escapeHTML(m.disciplinaNome)}): Média ${m.mediaFinal.toFixed(1)} - ${escapeHTML(m.situacao)}`).join("; ");
+    return `Certificamos que <strong>${escapeHTML(alunoAlvo.nome)}</strong> (Matrícula <strong>${escapeHTML(alunoAlvo.matricula)}</strong>) possui os seguintes registros no período 2026.2: ${linhas || "Sem componentes lançados"}.`;
+  }
+  if (tipo === "Comprovante de Grade") {
+    const turmasTexto = mats.map(m => {
+      const t = db.turmas.find(x => x.id === m.turmaId);
+      return `${escapeHTML(m.codigo)} - ${escapeHTML(m.disciplinaNome)} (${escapeHTML(t ? t.horario : "Horário Regular")})`;
+    }).join("; ");
+    return `Comprovamos que <strong>${escapeHTML(alunoAlvo.nome)}</strong> (Matrícula <strong>${escapeHTML(alunoAlvo.matricula)}</strong>) está inscrito(a) nas seguintes turmas em 2026.2: ${turmasTexto || "Nenhuma turma inscrita"}.`;
+  }
+  return `Declaramos para os devidos fins que <strong>${escapeHTML(alunoAlvo.nome)}</strong>, portador(a) da matrícula <strong>${escapeHTML(alunoAlvo.matricula)}</strong>, encontra-se regularmente matriculado(a) no curso de Bacharelado em Engenharia de Software no período letivo de 2026.2.`;
+}
 
 function renderDocumentos() {
   const db = getDB();
@@ -834,13 +974,23 @@ function renderDocumentos() {
     alunoSelecionadoDoc = alunos[0].id;
   }
 
-  const ultimo = db.documentosEmitidos[db.documentosEmitidos.length - 1];
+  const alunoAlvo = db.usuarios.find(u => u.id === alunoSelecionadoDoc) || currentUser;
+  const docsDoAluno = db.documentosEmitidos.filter(d => d.matricula === alunoAlvo.matricula && d.tipo === tipoDocumentoAtual);
+  const ultimo = docsDoAluno.length > 0
+    ? docsDoAluno[docsDoAluno.length - 1]
+    : {
+        hash: "AGUARDANDO-EMISSÃO",
+        tipo: tipoDocumentoAtual,
+        aluno: alunoAlvo.nome,
+        matricula: alunoAlvo.matricula || "2026001",
+        data: new Date().toLocaleDateString("pt-BR")
+      };
 
   const seletorAlunoDoc = currentUser.perfil !== "ALUNO" ? `
     <div class="form-group">
       <label>Aluno Destinatário</label>
-      <select onchange="alunoSelecionadoDoc = parseInt(this.value, 10)">
-        ${alunos.map(a => `<option value="${a.id}" ${a.id === alunoSelecionadoDoc ? "selected" : ""}>${a.nome} (${a.matricula})</option>`).join("")}
+      <select onchange="alunoSelecionadoDoc = parseInt(this.value, 10); renderDocumentos();">
+        ${alunos.map(a => `<option value="${a.id}" ${a.id === alunoSelecionadoDoc ? "selected" : ""}>${escapeHTML(a.nome)} (${escapeHTML(a.matricula)})</option>`).join("")}
       </select>
     </div>
   ` : "";
@@ -852,10 +1002,10 @@ function renderDocumentos() {
         ${seletorAlunoDoc}
         <div class="form-group">
           <label>Tipo de Documento</label>
-          <select id="doc-tipo">
-            <option value="Declaração de Matrícula">Declaração de Matrícula Ativa</option>
-            <option value="Histórico Escolar Parcial">Histórico Escolar Consolidado</option>
-            <option value="Comprovante de Grade">Comprovante de Horários</option>
+          <select id="doc-tipo" onchange="tipoDocumentoAtual = this.value; renderDocumentos();">
+            <option value="Declaração de Matrícula" ${tipoDocumentoAtual === "Declaração de Matrícula" ? "selected" : ""}>Declaração de Matrícula Ativa</option>
+            <option value="Histórico Escolar Parcial" ${tipoDocumentoAtual === "Histórico Escolar Parcial" ? "selected" : ""}>Histórico Escolar Consolidado</option>
+            <option value="Comprovante de Grade" ${tipoDocumentoAtual === "Comprovante de Grade" ? "selected" : ""}>Comprovante de Horários</option>
           </select>
         </div>
         <button type="button" class="btn btn-primary" onclick="gerarDocumento()">Gerar com Código de Autenticidade</button>
@@ -874,15 +1024,15 @@ function renderDocumentos() {
       <div class="card">
         <div class="card-header no-print">
           <h3>Pré-visualização do Documento</h3>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">Imprimir / Salvar PDF</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="imprimirDocumento()">Imprimir / Salvar PDF</button>
         </div>
         <div class="doc-preview">
           <h4>Universidade Católica do Salvador • SGA</h4>
-          <p style="margin-bottom:12px"><strong>${ultimo.tipo}</strong></p>
-          <p>Declaramos para os devidos fins que <strong>${ultimo.aluno}</strong>, portador(a) da matrícula <strong>${ultimo.matricula}</strong>, encontra-se regularmente matriculado(a) no curso de Bacharelado em Engenharia de Software no período letivo de 2026.2.</p>
-          <p style="margin-top:12px">Salvador - BA, ${ultimo.data}.</p>
+          <p style="margin-bottom:12px"><strong>${escapeHTML(ultimo.tipo)}</strong></p>
+          <p>${montarTextoDocumento(db, alunoAlvo, ultimo.tipo)}</p>
+          <p style="margin-top:12px">Salvador - BA, ${escapeHTML(ultimo.data)}.</p>
           <div class="hash-box">
-            Código de Autenticidade Digital: <strong>${ultimo.hash}</strong>
+            Código de Autenticidade Digital: <strong>${escapeHTML(ultimo.hash)}</strong>
           </div>
         </div>
       </div>
@@ -890,10 +1040,20 @@ function renderDocumentos() {
   `;
 }
 
+function imprimirDocumento() {
+  const db = getDB();
+  const alunoAlvo = db.usuarios.find(u => u.id === alunoSelecionadoDoc) || currentUser;
+  const jaEmitido = db.documentosEmitidos.some(d => d.matricula === alunoAlvo.matricula && d.tipo === tipoDocumentoAtual);
+  if (!jaEmitido) {
+    gerarDocumento();
+  }
+  window.print();
+}
+
 function gerarDocumento() {
   const db = getDB();
   const alunoAlvo = db.usuarios.find(u => u.id === alunoSelecionadoDoc) || currentUser;
-  const tipo = document.getElementById("doc-tipo").value;
+  const tipo = tipoDocumentoAtual;
   const hash = "SGA-2026-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
   db.documentosEmitidos.push({
@@ -914,14 +1074,14 @@ function validarHash() {
   const found = db.documentosEmitidos.find(d => d.hash === code);
   const box = document.getElementById("hash-resultado");
   if (found) {
-    box.innerHTML = `<div class="alert alert-success">Documento Autêntico: <strong>${found.tipo}</strong> emitido para ${found.aluno} em ${found.data}.</div>`;
+    box.innerHTML = `<div class="alert alert-success">Documento Autêntico: <strong>${escapeHTML(found.tipo)}</strong> emitido para ${escapeHTML(found.aluno)} em ${escapeHTML(found.data)}.</div>`;
   } else {
     box.innerHTML = `<div class="alert alert-danger">Código não encontrado na base oficial.</div>`;
   }
 }
 
 // ==========================================
-// 6. GESTÃO DE DISCIPLINAS E ABERTURA DE TURMAS
+// 6. GESTÃO DE DISCIPLINAS E TURMAS
 // ==========================================
 function renderGrade() {
   const db = getDB();
@@ -939,7 +1099,7 @@ function renderGrade() {
             </div>
             <div class="form-group">
               <label>Carga Horária *</label>
-              <input type="number" id="d-ch" required value="60" />
+              <input type="number" id="d-ch" required value="60" min="20" max="200" />
             </div>
           </div>
           <div class="form-group">
@@ -960,7 +1120,7 @@ function renderGrade() {
           <div class="form-group">
             <label>Disciplina *</label>
             <select id="t-disc">
-              ${db.disciplinas.map(d => `<option value="${d.id}">${d.codigo} - ${d.nome}</option>`).join("")}
+              ${db.disciplinas.map(d => `<option value="${d.id}">${escapeHTML(d.codigo)} - ${escapeHTML(d.nome)}</option>`).join("")}
             </select>
           </div>
           <div class="form-row">
@@ -977,7 +1137,7 @@ function renderGrade() {
             <div class="form-group">
               <label>Professor *</label>
               <select id="t-prof">
-                ${professores.map(p => `<option value="${p.nome}">${p.nome}</option>`).join("")}
+                ${professores.map(p => `<option value="${escapeHTML(p.nome)}">${escapeHTML(p.nome)}</option>`).join("")}
               </select>
             </div>
             <div class="form-group">
@@ -991,7 +1151,37 @@ function renderGrade() {
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>Matriz Curricular Cadastrada</h3></div>
+      <div class="card-header"><h3>Turmas Ofertadas no Semestre (${db.turmas.length})</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Turma</th>
+              <th>Disciplina</th>
+              <th>Professor</th>
+              <th>Horário</th>
+              <th>Vagas</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${db.turmas.map(t => `
+              <tr>
+                <td><strong>${escapeHTML(t.codigo)}</strong></td>
+                <td>${escapeHTML(t.disciplinaNome)}</td>
+                <td>${escapeHTML(t.professorNome)}</td>
+                <td>${escapeHTML(t.horario)}</td>
+                <td>${t.vagasDisponiveis} / ${t.vagasTotais}</td>
+                <td><button type="button" class="btn btn-secondary btn-sm" onclick="excluirTurma(${t.id})">Encerrar</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Matriz Curricular Cadastrada (${db.disciplinas.length})</h3></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -1006,10 +1196,10 @@ function renderGrade() {
           <tbody>
             ${db.disciplinas.map(d => `
               <tr>
-                <td><strong>${d.codigo}</strong></td>
-                <td>${d.nome}</td>
+                <td><strong>${escapeHTML(d.codigo)}</strong></td>
+                <td>${escapeHTML(d.nome)}</td>
                 <td>${d.cargaHoraria}h</td>
-                <td>${d.preRequisito}</td>
+                <td>${escapeHTML(d.preRequisito)}</td>
                 <td><button type="button" class="btn btn-secondary btn-sm" onclick="excluirDisciplina(${d.id})">Excluir</button></td>
               </tr>
             `).join("")}
@@ -1022,9 +1212,14 @@ function renderGrade() {
   document.getElementById("form-disc").addEventListener("submit", (e) => {
     e.preventDefault();
     const dbAtual = getDB();
+    const codigo = document.getElementById("d-cod").value.trim().toUpperCase();
+    if (dbAtual.disciplinas.some(d => d.codigo === codigo)) {
+      showToast("Bloqueado: Já existe uma disciplina com este código!");
+      return;
+    }
     dbAtual.disciplinas.push({
       id: Date.now(),
-      codigo: document.getElementById("d-cod").value.trim().toUpperCase(),
+      codigo,
       nome: document.getElementById("d-nome").value.trim(),
       cargaHoraria: parseInt(document.getElementById("d-ch").value, 10),
       preRequisito: document.getElementById("d-pre").value.trim() || "Nenhum"
@@ -1037,25 +1232,41 @@ function renderGrade() {
   document.getElementById("form-turma").addEventListener("submit", (e) => {
     e.preventDefault();
     const dbAtual = getDB();
+    const codigo = document.getElementById("t-cod").value.trim().toUpperCase();
+    if (dbAtual.turmas.some(t => t.codigo === codigo)) {
+      showToast("Bloqueado: Já existe uma turma ofertada com este código!");
+      return;
+    }
     const discId = parseInt(document.getElementById("t-disc").value, 10);
     const disc = dbAtual.disciplinas.find(d => d.id === discId);
     const vagas = parseInt(document.getElementById("t-vagas").value, 10);
 
     dbAtual.turmas.push({
       id: Date.now(),
-      codigo: document.getElementById("t-cod").value.trim().toUpperCase(),
+      codigo,
       disciplinaNome: disc ? disc.nome : "Disciplina",
       professorNome: document.getElementById("t-prof").value,
       horario: document.getElementById("t-hor").value.trim(),
       vagasTotais: vagas,
       vagasDisponiveis: vagas,
-      preRequisitoNome: disc ? disc.preRequisito : "Nenhum",
-      preRequisitoCumprido: true
+      preRequisitoNome: disc ? disc.preRequisito : "Nenhum"
     });
     saveDB(dbAtual);
     showToast("Turma ofertada e disponível na tela de Matrículas!");
     renderGrade();
   });
+}
+
+function excluirTurma(id) {
+  const db = getDB();
+  if (db.matriculas.some(m => m.turmaId === id)) {
+    showToast("Bloqueado: Existem alunos matriculados nesta turma!");
+    return;
+  }
+  db.turmas = db.turmas.filter(t => t.id !== id);
+  saveDB(db);
+  showToast("Turma removida da oferta.");
+  renderGrade();
 }
 
 function excluirDisciplina(id) {
@@ -1064,8 +1275,9 @@ function excluirDisciplina(id) {
   if (!disc) return;
 
   const temMatriculados = db.matriculas.some(m => m.disciplinaNome === disc.nome);
-  if (temMatriculados) {
-    showToast("Bloqueado: Não é possível excluir disciplina com alunos matriculados no semestre!");
+  const temTurma = db.turmas.some(t => t.disciplinaNome === disc.nome);
+  if (temMatriculados || temTurma) {
+    showToast("Bloqueado: Não é possível excluir disciplina com turma ofertada ou alunos matriculados!");
     return;
   }
   db.disciplinas = db.disciplinas.filter(d => d.id !== id);
@@ -1075,7 +1287,7 @@ function excluirDisciplina(id) {
 }
 
 // ==========================================
-// 7. AVALIAÇÃO DOCENTE (SEPARADA POR PERFIL)
+// 7. AVALIAÇÃO DOCENTE (1 VOTO ANÔNIMO POR TURMA)
 // ==========================================
 function renderAvaliacao() {
   const db = getDB();
@@ -1095,9 +1307,10 @@ function renderAvaliacao() {
                 ? minhasTurmas.map(m => {
                     const turmaInfo = db.turmas.find(t => t.id === m.turmaId);
                     const prof = turmaInfo ? turmaInfo.professorNome : "Docente Titular";
-                    return `<option value="${m.codigo} - ${m.disciplinaNome}|${prof}">${m.codigo} - ${m.disciplinaNome} (${prof})</option>`;
+                    const label = `${m.codigo} - ${m.disciplinaNome}`;
+                    return `<option value="${escapeHTML(label)}|${escapeHTML(prof)}">${escapeHTML(label)} (${escapeHTML(prof)})</option>`;
                   }).join("")
-                : `<option value="BES304-A - Engenharia de Requisitos|Elton Figueiredo">BES304-A - Engenharia de Requisitos (Elton Figueiredo)</option>`
+                : `<option value="BES304-A - Engenharia de Requisitos|Elton Figueiredo da Silva">BES304-A - Engenharia de Requisitos (Elton Figueiredo da Silva)</option>`
               }
             </select>
           </div>
@@ -1128,6 +1341,13 @@ function renderAvaliacao() {
       e.preventDefault();
       const [turma, professor] = document.getElementById("av-turma").value.split("|");
       const dbAtual = getDB();
+      const chaveVoto = `${currentUser.id}::${turma}`;
+      if (dbAtual.avaliacoesParticipacao.includes(chaveVoto)) {
+        showToast("Você já enviou sua avaliação anônima para esta turma!");
+        return;
+      }
+
+      dbAtual.avaliacoesParticipacao.push(chaveVoto);
       dbAtual.avaliacoesDocentes.push({
         id: Date.now(),
         turma,
@@ -1152,11 +1372,11 @@ function renderAvaliacao() {
         return `
           <div style="padding:14px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px">
             <div style="display:flex;justify-content:space-between">
-              <strong>${a.turma}</strong>
+              <strong>${escapeHTML(a.turma)}</strong>
               <span class="badge badge-success">Média Geral: ${media} / 5.0</span>
             </div>
-            <small style="color:var(--muted)">Docente: ${a.professor} • Didática: ${a.didatica} | Pontualidade: ${a.pontualidade} | Domínio: ${a.dominio} • Respondente: Anônimo</small>
-            ${a.comentario ? `<p style="margin-top:6px;font-size:0.88rem">"${a.comentario}"</p>` : ""}
+            <small style="color:var(--muted)">Docente: ${escapeHTML(a.professor)} • Didática: ${a.didatica} | Pontualidade: ${a.pontualidade} | Domínio: ${a.dominio} • Respondente: Anônimo</small>
+            ${a.comentario ? `<p style="margin-top:6px;font-size:0.88rem">"${escapeHTML(a.comentario)}"</p>` : ""}
           </div>
         `;
       }).join("")}
@@ -1178,14 +1398,14 @@ function renderOuvidoria() {
         ${db.denuncias.map((d, idx) => `
           <div style="padding:14px;border:1px solid var(--border);border-radius:6px;margin-bottom:12px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <strong>Protocolo: ${d.protocolo} — ${d.categoria}</strong>
+              <strong>Protocolo: ${escapeHTML(d.protocolo)} — ${escapeHTML(d.categoria)}</strong>
               <div style="display:flex;gap:8px;align-items:center">
-                <span class="badge ${d.status === "Resolvida" ? "badge-success" : "badge-warning"}">${d.status}</span>
+                <span class="badge ${d.status === "Resolvida" ? "badge-success" : "badge-warning"}">${escapeHTML(d.status)}</span>
                 ${d.status !== "Resolvida" ? `<button type="button" class="btn btn-secondary btn-sm" onclick="concluirDenuncia(${idx})">Marcar como Resolvida</button>` : ""}
               </div>
             </div>
-            <small style="color:var(--muted)">Data: ${d.data} • ${d.anonimo ? "Registro Anônimo (Sigilo Preservado)" : "Registro Identificado"}</small>
-            <p style="margin-top:8px;font-size:0.9rem">${d.descricao}</p>
+            <small style="color:var(--muted)">Data: ${escapeHTML(d.data)} • ${d.anonimo ? "Registro Anônimo (Sigilo Preservado)" : "Registro Identificado"}</small>
+            <p style="margin-top:8px;font-size:0.9rem">${escapeHTML(d.descricao)}</p>
           </div>
         `).join("")}
       </div>
@@ -1211,7 +1431,7 @@ function renderOuvidoria() {
             <label>Identificação</label>
             <select id="ouv-anon">
               <option value="true">Enviar de forma Anônima (Sigilo Total)</option>
-              <option value="false">Enviar Identificado (${currentUser.nome})</option>
+              <option value="false">Enviar Identificado (${escapeHTML(currentUser.nome)})</option>
             </select>
           </div>
           <div class="form-group">
@@ -1229,11 +1449,11 @@ function renderOuvidoria() {
           : meusProtocolos.map(d => `
             <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px">
               <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <strong>Protocolo: ${d.protocolo}</strong>
-                <span class="badge ${d.status === "Resolvida" ? "badge-success" : "badge-warning"}">${d.status}</span>
+                <strong>Protocolo: ${escapeHTML(d.protocolo)}</strong>
+                <span class="badge ${d.status === "Resolvida" ? "badge-success" : "badge-warning"}">${escapeHTML(d.status)}</span>
               </div>
-              <small style="color:var(--muted)">${d.categoria} • ${d.data} • ${d.anonimo ? "Anônimo" : "Identificado"}</small>
-              <p style="margin-top:6px;font-size:0.86rem">${d.descricao}</p>
+              <small style="color:var(--muted)">${escapeHTML(d.categoria)} • ${escapeHTML(d.data)} • ${d.anonimo ? "Anônimo" : "Identificado"}</small>
+              <p style="margin-top:6px;font-size:0.86rem">${escapeHTML(d.descricao)}</p>
             </div>
           `).join("")
         }
@@ -1277,6 +1497,10 @@ function renderMural() {
   const db = getDB();
   const podePublicar = ["PROFESSOR", "SECRETARIA", "COORDENADOR", "ADMIN"].includes(currentUser.perfil);
 
+  const turmasPublicacao = currentUser.perfil === "PROFESSOR"
+    ? db.turmas.filter(t => t.professorNome === currentUser.nome)
+    : db.turmas;
+
   let avisosVisiveis = db.avisos;
   if (currentUser.perfil === "ALUNO") {
     const codigosAluno = db.matriculas.filter(m => m.alunoId === currentUser.id).map(m => m.codigo);
@@ -1296,7 +1520,7 @@ function renderMural() {
             <div class="form-group">
               <label>Público-Alvo</label>
               <select id="aviso-destino">
-                ${db.turmas.map(t => `<option value="${t.codigo}|${t.codigo} (${t.disciplinaNome})">Turma ${t.codigo} (${t.disciplinaNome})</option>`).join("")}
+                ${turmasPublicacao.map(t => `<option value="${escapeHTML(t.codigo)}|${escapeHTML(t.codigo)} (${escapeHTML(t.disciplinaNome)})">Turma ${escapeHTML(t.codigo)} (${escapeHTML(t.disciplinaNome)})</option>`).join("")}
                 ${currentUser.perfil !== "PROFESSOR" ? `<option value="GERAL|Toda a Instituição">Toda a Instituição (Aviso Geral)</option>` : ""}
               </select>
             </div>
@@ -1315,11 +1539,11 @@ function renderMural() {
       ${avisosVisiveis.map(a => `
         <div style="padding:14px;border-left:4px solid var(--primary);background:#f8fafc;margin-bottom:12px;border-radius:4px">
           <div style="display:flex;justify-content:space-between">
-            <strong>${a.titulo}</strong>
-            <span class="badge badge-neutral">${a.destino}</span>
+            <strong>${escapeHTML(a.titulo)}</strong>
+            <span class="badge badge-neutral">${escapeHTML(a.destino)}</span>
           </div>
-          <p style="margin:6px 0;font-size:0.9rem">${a.mensagem}</p>
-          <small style="color:var(--muted)">Publicado por ${a.autor} em ${a.data}</small>
+          <p style="margin:6px 0;font-size:0.9rem">${escapeHTML(a.mensagem)}</p>
+          <small style="color:var(--muted)">Publicado por ${escapeHTML(a.autor)} em ${escapeHTML(a.data)}</small>
         </div>
       `).join("")}
     </div>
@@ -1397,9 +1621,9 @@ function renderCalendario() {
           <tbody>
             ${db.calendario.map(c => `
               <tr>
-                <td><strong>${c.data}</strong></td>
-                <td>${c.evento}</td>
-                <td><span class="badge badge-neutral">${c.tipo}</span></td>
+                <td><strong>${escapeHTML(c.data)}</strong></td>
+                <td>${escapeHTML(c.evento)}</td>
+                <td><span class="badge badge-neutral">${escapeHTML(c.tipo)}</span></td>
               </tr>
             `).join("")}
           </tbody>
@@ -1450,7 +1674,7 @@ function renderRelatorios() {
           <label>Filtrar Indicadores por Turma</label>
           <select onchange="filtroRelatorioTurma = this.value; renderRelatorios();">
             <option value="TODAS" ${filtroRelatorioTurma === "TODAS" ? "selected" : ""}>Todas as Turmas (Consolidado Geral)</option>
-            ${db.turmas.map(t => `<option value="${t.codigo}" ${filtroRelatorioTurma === t.codigo ? "selected" : ""}>${t.codigo} - ${t.disciplinaNome}</option>`).join("")}
+            ${db.turmas.map(t => `<option value="${escapeHTML(t.codigo)}" ${filtroRelatorioTurma === t.codigo ? "selected" : ""}>${escapeHTML(t.codigo)} - ${escapeHTML(t.disciplinaNome)}</option>`).join("")}
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0">
@@ -1506,9 +1730,9 @@ function renderRelatorios() {
 
               return `
                 <tr>
-                  <td><strong>${t.codigo}</strong></td>
-                  <td>${t.disciplinaNome}</td>
-                  <td>${t.professorNome}</td>
+                  <td><strong>${escapeHTML(t.codigo)}</strong></td>
+                  <td>${escapeHTML(t.disciplinaNome)}</td>
+                  <td>${escapeHTML(t.professorNome)}</td>
                   <td>${ocupadas} / ${t.vagasTotais} alunos</td>
                   <td>
                     <span class="badge ${mediaTurma === "Sem notas" ? "badge-neutral" : (parseFloat(mediaTurma) >= 7 ? "badge-success" : "badge-warning")}">
