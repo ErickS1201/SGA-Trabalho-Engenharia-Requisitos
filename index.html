@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SGA - Sistema de Gestão Acadêmica</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- TELA DE LOGIN + VALIDAÇÃO PÚBLICA DE DOCUMENTOS -->
+  <div id="login-screen" class="login-wrapper">
+    <div class="login-card">
+      <div class="brand-header">
+        <div class="brand-logo">SGA</div>
+        <div>
+          <h1>Sistema de Gestão Acadêmica</h1>
+          <p>Portal Institucional • Acesso Unificado</p>
+        </div>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-input">CPF ou Matrícula</label>
+          <input type="text" id="login-input" placeholder="Ex: 12345678900 ou 2026001" required />
+        </div>
+        <div class="form-group">
+          <label for="senha-input">Senha</label>
+          <input type="password" id="senha-input" placeholder="Digite sua senha" required />
+        </div>
+        <div id="login-feedback" class="alert hidden"></div>
+        <button type="submit" class="btn btn-primary btn-block">Entrar no Sistema</button>
+      </form>
+
+      <div class="demo-access">
+        <p>Acesso Rápido de Demonstração (Simulação de Perfis):</p>
+        <div class="demo-buttons">
+          <button type="button" class="btn-chip" onclick="acessoRapido('ALUNO')">Aluno</button>
+          <button type="button" class="btn-chip" onclick="acessoRapido('PROFESSOR')">Professor</button>
+          <button type="button" class="btn-chip" onclick="acessoRapido('SECRETARIA')">Secretaria</button>
+          <button type="button" class="btn-chip" onclick="acessoRapido('COORDENADOR')">Coordenador</button>
+          <button type="button" class="btn-chip" onclick="acessoRapido('ADMIN')">Admin</button>
+        </div>
+      </div>
+
+      <!-- CONSULTA PÚBLICA DE AUTENTICIDADE (SEM LOGIN) -->
+      <div class="demo-access">
+        <p><strong>Consulta Pública:</strong> Validar Autenticidade de Documento</p>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="public-hash-input" placeholder="Código (Ex: SGA-2026-9F8A2C)" />
+          <button type="button" class="btn btn-secondary btn-sm" onclick="validarHashPublico()">Verificar</button>
+        </div>
+        <div id="public-hash-result" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL PRINCIPAL -->
+  <div id="app-shell" class="app-layout hidden">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand-logo small">SGA</div>
+        <span class="sidebar-title">Portal Acadêmico</span>
+      </div>
+
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+
+      <div class="sidebar-footer">
+        <div class="api-status">
+          <span id="api-dot" class="dot offline"></span>
+          <span id="api-label">Modo Local (Offline)</span>
+        </div>
+        <button type="button" class="btn btn-outline btn-block" onclick="logout()">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2 id="page-title">Início</h2>
+          <p id="page-subtitle" class="subtitle">Bem-vindo ao Sistema de Gestão Acadêmica</p>
+        </div>
+        <div class="topbar-actions">
+          <label for="role-switcher" class="role-label">Simular Perfil:</label>
+          <select id="role-switcher" onchange="trocarPerfil(this.value)">
+            <option value="ALUNO">Aluno (Cailan Abade)</option>
+            <option value="PROFESSOR">Professor (Elton Figueiredo)</option>
+            <option value="SECRETARIA">Secretaria Acadêmica</option>
+            <option value="COORDENADOR">Coordenador de Curso</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+        </div>
+      </header>
+
+      <div id="toast" class="toast hidden"></div>
+
+      <section id="view-container" class="view-container"></section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
