@@ -102,11 +102,11 @@ public class MatriculaController {
         if (freq < 75.0) {
             matricula.setSituacao("REPROVADO_FREQUENCIA"); // Frequência inferior a 75% bloqueia aprovação direta[cite: 35, 36]
         } else if (mediaFinal >= 7.0) {
-            matricula.setSituacao("APROVADO");[cite: 36]
+            matricula.setSituacao("APROVADO");
         } else if (mediaFinal >= 4.0) {
-            matricula.setSituacao("EXAME_FINAL");[cite: 36]
+            matricula.setSituacao("EXAME_FINAL");
         } else {
-            matricula.setSituacao("REPROVADO_NOTA");[cite: 36]
+            matricula.setSituacao("REPROVADO_NOTA");
         }
 
         matriculaRepository.save(matricula);

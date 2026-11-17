@@ -17,39 +17,47 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    // DTO interno para evitar qualquer erro de classpath ou pacote separado
+    public static class LoginRequest {
+        private String login;
+        private String senha;
+        
+        public LoginRequest() {}
+        
+        public String getLogin() { return login; }
+        public void setLogin(String login) { this.login = login; }
+        public String getSenha() { return senha; }
+        public void setSenha(String senha) { this.senha = senha; }
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        String loginStr = credentials.get("login");
-        String senha = credentials.get("senha");
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        System.out.println("--- TENTATIVA DE LOGIN ---");
+        System.out.println("Login recebido: " + request.getLogin());
+        System.out.println("Senha recebida: " + request.getSenha());
 
-        Usuario usuario = usuarioRepository.findByCpfOrMatricula(loginStr, loginStr)
-                .orElse(null);
-
-        if (usuario == null || !usuario.isAtivo()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuário não encontrado ou inativo.");
+        if (request.getLogin() == null || request.getSenha() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Login ou senha não informados.");
         }
 
-        // Simulação de controle de tentativas (RN02)
-        if (usuario.getTentativasLogin() >= 3) {
-            return ResponseEntity.status(HttpStatus.locked("Conta temporariamente bloqueada por excesso de tentativas."))
-                    .body(Map.of("erro", "Conta bloqueada por 15 minutos."));
+        Usuario usuario = usuarioRepository.findByCpfOrMatricula(request.getLogin(), request.getLogin()).orElse(null);
+
+        if (usuario == null) {
+            System.out.println("-> Usuário NÃO encontrado no banco.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuário não encontrado.");
         }
 
-        if (!usuario.getSenha().equals(senha)) {
-            usuario.setTentativasLogin(usuario.getTentativasLogin() + 1);
-            usuarioRepository.save(usuario);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciais inválidas.");
+        if (!usuario.getSenha().equals(request.getSenha())) {
+            System.out.println("-> Senha incorreta! Senha no banco: " + usuario.getSenha() + " | Senha enviada: " + request.getSenha());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha incorreta.");
         }
 
-        // Reset de tentativas em caso de sucesso
-        usuario.setTentativasLogin(0);
-        usuarioRepository.save(usuario);
-
+        System.out.println("-> Login bem-sucedido para: " + usuario.getNome());
         return ResponseEntity.ok(Map.of(
                 "id", usuario.getId(),
                 "nome", usuario.getNome(),
                 "perfil", usuario.getPerfil(),
-                "token", "token-jwt-simulado-sga"
+                "token", "token-jwt-simulado"
         ));
     }
 }

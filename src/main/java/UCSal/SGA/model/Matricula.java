@@ -24,7 +24,7 @@ public class Matricula {
     private Double mediaFinal;
     private Double percentualFrequencia;
     
-    private Situacao situacao = Situacao.CURSANDO;
+    private String situacao = "CURSANDO";
 }
 
 enum Situacao{
