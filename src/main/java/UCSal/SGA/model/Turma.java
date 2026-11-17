@@ -18,4 +18,6 @@ public class Turma {
     private int vagasTotais;
     private int vagasDisponiveis;
     private String preRequisitoNome;
+    private Long professorId;
+    
 }

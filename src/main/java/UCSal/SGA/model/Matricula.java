@@ -23,7 +23,8 @@ public class Matricula {
     private Double nota2;
     private Double mediaFinal;
     private Double percentualFrequencia;
-    
+    private int totalAulasDadas;
+    private int aulasPresenca;
     private String situacao = "CURSANDO";
 }
 
