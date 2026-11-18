@@ -1,102 +1,228 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SGA - Sistema de Gestão Acadêmica</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Sistema de Gestão Acadêmica</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- TELA DE LOGIN + VALIDAÇÃO PÚBLICA DE DOCUMENTOS -->
-  <div id="login-screen" class="login-wrapper">
-    <div class="login-card">
-      <div class="brand-header">
-        <div class="brand-logo">SGA</div>
-        <div>
-          <h1>Sistema de Gestão Acadêmica</h1>
-          <p>Portal Institucional • Acesso Unificado</p>
-        </div>
-      </div>
 
-      <form id="login-form">
-        <div class="form-group">
-          <label for="login-input">CPF ou Matrícula</label>
-          <input type="text" id="login-input" placeholder="Ex: 12345678900 ou 2026001" required />
+    <!-- TELA 1: LOGIN (RF01) -->
+    <div id="tela-login" class="container-login">
+        <div class="card-login">
+            <h2>SGA</h2>
+            <p>Sistema de Gestão Acadêmica</p>
+            <form id="form-login" onsubmit="fazerLogin(event)">
+                <input type="text" id="login-input" placeholder="CPF ou Matrícula" required>
+                <input type="password" id="senha-input" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+            
         </div>
-        <div class="form-group">
-          <label for="senha-input">Senha</label>
-          <input type="password" id="senha-input" placeholder="Digite sua senha" required />
-        </div>
-        <div id="login-feedback" class="alert hidden"></div>
-        <button type="submit" class="btn btn-primary btn-block">Entrar no Sistema</button>
-      </form>
-
-      <div class="demo-access">
-        <p>Acesso Rápido de Demonstração (Simulação de Perfis):</p>
-        <div class="demo-buttons">
-          <button type="button" class="btn-chip" onclick="acessoRapido('ALUNO')">Aluno</button>
-          <button type="button" class="btn-chip" onclick="acessoRapido('PROFESSOR')">Professor</button>
-          <button type="button" class="btn-chip" onclick="acessoRapido('SECRETARIA')">Secretaria</button>
-          <button type="button" class="btn-chip" onclick="acessoRapido('COORDENADOR')">Coordenador</button>
-          <button type="button" class="btn-chip" onclick="acessoRapido('ADMIN')">Admin</button>
-        </div>
-      </div>
-
-      <!-- CONSULTA PÚBLICA DE AUTENTICIDADE (SEM LOGIN) -->
-      <div class="demo-access">
-        <p><strong>Consulta Pública:</strong> Validar Autenticidade de Documento</p>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="public-hash-input" placeholder="Código (Ex: SGA-2026-9F8A2C)" />
-          <button type="button" class="btn btn-secondary btn-sm" onclick="validarHashPublico()">Verificar</button>
-        </div>
-        <div id="public-hash-result" style="margin-top:10px"></div>
-      </div>
     </div>
-  </div>
 
-  <!-- PAINEL PRINCIPAL -->
-  <div id="app-shell" class="app-layout hidden">
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="brand-logo small">SGA</div>
-        <span class="sidebar-title">Portal Acadêmico</span>
-      </div>
+    <!-- SISTEMA PRINCIPAL (APÓS LOGIN) -->
+    <div id="sistema-principal" class="hidden">
+        <header class="navbar">
+            <div class="logo"><strong>SGA</strong> | Portal <span id="badge-perfil"></span></div>
+            <div class="user-info">
+                <span id="nome-usuario-logado"></span>
+                <button onclick="logout()" class="btn-sair">Sair</button>
+            </div>
+        </header>
 
-      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+        <div class="layout">
+            <!-- MENU LATERAL DINÂMICO -->
+            <aside class="sidebar">
+                <ul id="menu-navegacao"></ul>
+            </aside>
 
-      <div class="sidebar-footer">
-        <div class="api-status">
-          <span id="api-dot" class="dot offline"></span>
-          <span id="api-label">Modo Local (Offline)</span>
+            <!-- ÁREA DE CONTEÚDO DAS TELAS -->
+            <main class="content">
+                
+                <!-- RF02: GESTÃO DE USUÁRIOS (SECRETARIA / ADMIN) -->
+                <section id="sec-usuarios" class="tela-modulo hidden">
+                    <h2>Gestão de Usuários (RF02)</h2>
+                    <form id="form-cadastro-usuario" class="form-grid" onsubmit="cadastrarUsuario(event)">
+                        <input type="text" id="cad-nome" placeholder="Nome Completo" required>
+                        <input type="text" id="cad-cpf" placeholder="CPF (apenas números)" required>
+                        <input type="text" id="cad-matricula" placeholder="Matrícula" required>
+                        <input type="email" id="cad-email" placeholder="E-mail Institucional" required>
+                        <input type="password" id="cad-senha" placeholder="Senha" required>
+                        <select id="cad-perfil" required>
+                            <option value="ALUNO">Aluno</option>
+                            <option value="PROFESSOR">Professor</option>
+                            <option value="SECRETARIA">Secretaria</option>
+                            <option value="COORDENADOR">Coordenador</option>
+                            <option value="ADMIN">Administrador</option>
+                        </select>
+                        <button type="submit">Cadastrar Usuário</button>
+                    </form>
+                    <table class="tabela">
+                        <thead>
+                            <tr><th>Nome</th><th>CPF</th><th>Matrícula</th><th>Perfil</th><th>Status</th><th>Ação</th></tr>
+                        </thead>
+                        <tbody id="tabela-usuarios"></tbody>
+                    </table>
+                </section>
+
+                <!-- RF03: MATRÍCULA EM DISCIPLINAS (ALUNO) -->
+                <section id="sec-matricula" class="tela-modulo hidden">
+                    <h2>Matrícula em Disciplinas e Turmas (RF03)</h2>
+                    <div id="lista-turmas-disponiveis" class="cards-grid"></div>
+                </section>
+
+                <!-- RF05: BOLETIM E HISTÓRICO (ALUNO) -->
+                <section id="sec-boletim" class="tela-modulo hidden">
+                    <h2>Meu Boletim e Frequência (RF05)</h2>
+                    <table class="tabela">
+                        <thead>
+                            <tr><th>Código</th><th>Disciplina</th><th>Nota 1</th><th>Nota 2</th><th>Média</th><th>Freq (%)</th><th>Situação</th></tr>
+                        </thead>
+                        <tbody id="tabela-boletim"></tbody>
+                    </table>
+                </section>
+
+                <!-- RF04: LANÇAMENTO DE NOTAS E FREQUÊNCIA (PROFESSOR) -->
+                <section id="sec-notas" class="tela-modulo hidden">
+                    <h2>Lançamento de Notas e Frequência (RF04)</h2>
+                    <div class="filtro-turma">
+                        <label>Selecione a Turma:</label>
+                        <select id="select-turma-prof" onchange="carregarAlunosTurma()"></select>
+                    </div>
+                    <table class="tabela">
+                        <thead>
+                            <tr><th>Aluno</th><th>Matrícula</th><th>Nota 1</th><th>Nota 2</th><th>Freq (%)</th><th>Média / Situação</th><th>Ação</th></tr>
+                        </thead>
+                        <tbody id="tabela-lancamento-notas"></tbody>
+                    </table>
+                </section>
+
+                <!-- RF06: EMISSÃO DE DOCUMENTOS (ALUNO / SECRETARIA) -->
+                <section id="sec-documentos" class="tela-modulo hidden">
+                    <h2>Emissão de Documentos Acadêmicos (RF06)</h2>
+                    <div class="acoes-doc">
+                        <button onclick="emitirDocumento('DECLARACAO_MATRICULA')">Gerar Declaração de Matrícula</button>
+                        <button onclick="emitirDocumento('HISTORICO_ESCOLAR')">Gerar Histórico Escolar</button>
+                    </div>
+                    <div id="area-documento-gerado" class="doc-box hidden"></div>
+                </section>
+                <!-- Módulo de Realizar Chamada (Professor) -->
+<div id="sec-chamada" class="tela-modulo hidden">
+    <h2>Registro de Chamada Diária</h2>
+    <p>Selecione a turma para carregar a lista de alunos e computar a presença:</p>
+    
+    <div class="card-item mt-20">
+        <label><strong>Turma:</strong></label>
+        <select id="select-turma-chamada" onchange="carregarAlunosParaChamada()" class="mt-10" style="width: 100%; padding: 8px;">
+            <!-- Preenchido via JavaScript -->
+        </select>
+    </div>
+
+    <div id="lista-chamada-alunos" class="mt-20">
+        <!-- Checkboxes dos alunos aparecem aqui -->
+    </div>
+
+    <button onclick="enviarChamada()" class="mt-20" style="padding: 10px 20px; background-color: #2e7d32; color: white; border: none; cursor: pointer;">
+        Salvar Chamada e Atualizar Frequência
+    </button>
+</div>
+
+<!-- Módulo de Alocar Professor (Coordenador / Admin) -->
+<div id="sec-alocacao" class="tela-modulo hidden">
+    <h2>Atribuição de Docente à Turma</h2>
+    <p>Selecione a turma e o professor responsável pela regência:</p>
+    
+    <div class="card-item mt-20" style="max-width: 600px;">
+        <form onsubmit="salvarAlocacaoProfessor(event)">
+            <label><strong>Turma:</strong></label>
+            <select id="select-aloca-turma" class="mt-10" style="width: 100%; padding: 8px;">
+                <!-- Preenchido via JavaScript -->
+            </select>
+
+            <label class="mt-20"><strong>Professor:</strong></label>
+            <select id="select-aloca-prof" class="mt-10" style="width: 100%; padding: 8px;" required>
+                <!-- Preenchido via JavaScript -->
+            </select>
+
+            <button type="submit" class="mt-20" style="padding: 10px 20px; background-color: #1976d2; color: white; border: none; cursor: pointer;">
+                Vincular Professor à Turma
+            </button>
+        </form>
+    </div>
+</div>
+                <!-- RF07: GRADE CURRICULAR E DISCIPLINAS (COORDENAÇÃO) -->
+                <section id="sec-curriculo" class="tela-modulo hidden">
+                    <h2>Gestão de Disciplinas e Grade Curricular (RF07)</h2>
+                    <form onsubmit="cadastrarDisciplina(event)" class="form-inline">
+                        <input type="text" id="disc-nome" placeholder="Nome da Disciplina" required>
+                        <input type="number" id="disc-ch" placeholder="Carga Horária (h)" required>
+                        <input type="text" id="disc-ementa" placeholder="Ementa resumida" required>
+                        <button type="submit">Adicionar Disciplina</button>
+                    </form>
+                    <ul id="lista-disciplinas" class="lista-simples"></ul>
+                </section>
+
+                <!-- RF08: AVALIAÇÃO DOCENTE (ALUNO / COORDENAÇÃO) -->
+                <section id="sec-avaliacao" class="tela-modulo hidden">
+                    <h2>Avaliação de Desempenho Docente (RF08)</h2>
+                    <p>Formulário anônimo de avaliação institucional (Escala Likert 1 a 5).</p>
+                    <form onsubmit="enviarAvaliacaoDocente(event)" class="form-vertical">
+                        <label>1. Domínio do conteúdo pelo docente:</label>
+                        <select id="av-q1"><option value="5">5 - Excelente</option><option value="4">4 - Bom</option><option value="3">3 - Regular</option></select>
+                        <label>2. Clareza nas explicações e avaliações:</label>
+                        <select id="av-q2"><option value="5">5 - Excelente</option><option value="4">4 - Bom</option><option value="3">3 - Regular</option></select>
+                        <button type="submit">Enviar Avaliação Anônima</button>
+                    </form>
+                </section>
+
+                <!-- RF09: OUVIDORIA E DENÚNCIAS (TODOS / COORDENAÇÃO) -->
+                <section id="sec-ouvidoria" class="tela-modulo hidden">
+                    <h2>Canal de Denúncias e Ouvidoria (RF09)</h2>
+                    <form onsubmit="registrarDenuncia(event)" class="form-vertical">
+                        <textarea id="denuncia-texto" rows="4" placeholder="Descreva sua manifestação ou denúncia..." required></textarea>
+                        <label><input type="checkbox" id="denuncia-anonima" checked> Registrar de forma anônima (RN07)</label>
+                        <button type="submit">Registrar Protocolo</button>
+                    </form>
+                    <div id="lista-denuncias-coord" class="mt-20"></div>
+                </section>
+
+                <!-- RF10 & RF11: MURAL DE AVISOS E CALENDÁRIO (TODOS) -->
+                <section id="sec-mural" class="tela-modulo hidden">
+                    <h2>Mural de Avisos e Calendário Acadêmico (RF10 / RF11)</h2>
+                    <div id="form-novo-aviso-box" class="hidden">
+                        <form onsubmit="publicarAviso(event)" class="form-inline">
+                            <input type="text" id="aviso-titulo" placeholder="Título do Aviso" required>
+                            <input type="text" id="aviso-conteudo" placeholder="Mensagem" required>
+                            <button type="submit">Publicar Aviso</button>
+                        </form>
+                    </div>
+                    <div id="lista-avisos" class="cards-grid mt-20"></div>
+                    <div class="calendario-box mt-20">
+                        <h3>Calendário Oficial 2026.2</h3>
+                        <ul>
+                            <li><strong>01/08/2026:</strong> Início do Semestre Letivo</li>
+                            <li><strong>17/11/2026:</strong> Entrega dos Projetos - 2ª Unidade</li>
+                            <li><strong>15/12/2026:</strong> Encerramento e Exames Finais</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- RF12: RELATÓRIOS GERENCIAIS (COORDENAÇÃO / ADMIN) -->
+                <section id="sec-relatorios" class="tela-modulo hidden">
+                    <h2>Relatórios Gerenciais e Indicadores (RF12)</h2>
+                    <div class="kpis-grid">
+                        <div class="kpi-card"><h3>Taxa de Aprovação</h3><p class="kpi-valor">84,5%</p></div>
+                        <div class="kpi-card"><h3>Frequência Média</h3><p class="kpi-valor">91,2%</p></div>
+                        <div class="kpi-card"><h3>Índice de Evasão</h3><p class="kpi-valor">4,1%</p></div>
+                    </div>
+                </section>
+
+            </main>
         </div>
-        <button type="button" class="btn btn-outline btn-block" onclick="logout()">Sair</button>
-      </div>
-    </aside>
+    </div>
 
-    <main class="main-content">
-      <header class="topbar">
-        <div>
-          <h2 id="page-title">Início</h2>
-          <p id="page-subtitle" class="subtitle">Bem-vindo ao Sistema de Gestão Acadêmica</p>
-        </div>
-        <div class="topbar-actions">
-          <label for="role-switcher" class="role-label">Simular Perfil:</label>
-          <select id="role-switcher" onchange="trocarPerfil(this.value)">
-            <option value="ALUNO">Aluno (Cailan Abade)</option>
-            <option value="PROFESSOR">Professor (Elton Figueiredo)</option>
-            <option value="SECRETARIA">Secretaria Acadêmica</option>
-            <option value="COORDENADOR">Coordenador de Curso</option>
-            <option value="ADMIN">Administrador</option>
-          </select>
-        </div>
-      </header>
-
-      <div id="toast" class="toast hidden"></div>
-
-      <section id="view-container" class="view-container"></section>
-    </main>
-  </div>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
