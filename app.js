@@ -480,9 +480,21 @@ async function carregarDenuncias() {
 async function carregarAvisos() {
     const res = await fetch(`${API_URL}/avisos`);
     const lista = await res.json();
-    document.getElementById('lista-avisos').innerHTML = lista.map(a =>
-        `<div class="card-item"><h4>${a.titulo}</h4><p>${a.conteudo}</p></div>`
-    ).join('');
+    const podeExcluir = ['PROFESSOR', 'SECRETARIA', 'COORDENADOR', 'ADMIN'].includes(usuarioAtual.perfil);
+
+    document.getElementById('lista-avisos').innerHTML = lista.map(a => `
+        <div class="card-item" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h4>${a.titulo}</h4>
+                <p>${a.conteudo}</p>
+            </div>
+            ${podeExcluir ? `
+                <button onclick="excluirAviso(${a.idAviso})" style="margin-top: 12px; background-color: #c62828; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; align-self: flex-start;">
+                    Excluir
+                </button>
+            ` : ''}
+        </div>
+    `).join('');
 }
 
 async function publicarAviso(event) {
@@ -498,4 +510,18 @@ async function publicarAviso(event) {
     document.getElementById('aviso-titulo').value = '';
     document.getElementById('aviso-conteudo').value = '';
     carregarAvisos();
+}
+
+async function excluirAviso(idAviso) {
+    if (!confirm('Deseja realmente excluir este aviso?')) return;
+
+    const res = await fetch(`${API_URL}/avisos/${idAviso}`, {
+        method: 'DELETE'
+    });
+
+    if (res.ok) {
+        carregarAvisos();
+    } else {
+        alert('Erro ao excluir o aviso.');
+    }
 }

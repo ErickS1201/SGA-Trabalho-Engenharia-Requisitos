@@ -209,10 +209,10 @@
                 <!-- RF10 & RF11: MURAL DE AVISOS E CALENDÁRIO (TODOS) -->
                 <section id="sec-mural" class="tela-modulo hidden">
                     <h2>Mural de Avisos e Calendário Acadêmico (RF10 / RF11)</h2>
-                    <div id="form-novo-aviso-box" class="hidden">
-                        <form onsubmit="publicarAviso(event)" class="form-inline">
+                    <div id="form-novo-aviso-box" class="hidden" style="max-width: 600px;">
+                        <form onsubmit="publicarAviso(event)" class="form-vertical">
                             <input type="text" id="aviso-titulo" placeholder="Título do Aviso" required>
-                            <input type="text" id="aviso-conteudo" placeholder="Mensagem" required>
+                            <textarea id="aviso-conteudo" rows="3" placeholder="Escreva a mensagem completa do aviso..." style="resize: vertical; width: 100%; padding: 8px;" required></textarea>
                             <button type="submit">Publicar Aviso</button>
                         </form>
                     </div>
