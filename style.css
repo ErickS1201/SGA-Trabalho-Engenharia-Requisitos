@@ -42,3 +42,34 @@ button:hover { background: #004494; }
 .kpi-valor { font-size: 28px; font-weight: bold; color: #003366; margin-top: 8px; }
 .doc-box { background: #fff; border: 2px dashed #003366; padding: 25px; margin-top: 20px; max-width: 600px; }
 .mt-20 { margin-top: 20px; }
+
+.cards-grid > .card-item {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.card-item h4,
+.card-item p {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #area-documento-gerado,
+    #area-documento-gerado * {
+        visibility: visible;
+    }
+    #area-documento-gerado {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    #area-documento-gerado button {
+        display: none;
+    }
+}

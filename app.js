@@ -89,7 +89,6 @@ function abrirTela(idSecao) {
     document.querySelectorAll('.tela-modulo').forEach(sec => sec.classList.add('hidden'));
     document.getElementById(idSecao).classList.remove('hidden');
 
-    // Gatilhos de carregamento de dados reais da API
     if (idSecao === 'sec-usuarios') carregarUsuarios();
     if (idSecao === 'sec-matricula') carregarTurmasParaMatricula();
     if (idSecao === 'sec-chamada') carregarTurmasParaSelecaoChamada();
@@ -99,10 +98,11 @@ function abrirTela(idSecao) {
     if (idSecao === 'sec-mural') carregarAvisos();
     if (idSecao === 'sec-alocacao') carregarTelaAlocacao();
     if (idSecao === 'sec-ouvidoria' && usuarioAtual.perfil === 'COORDENADOR') carregarDenuncias();
+    if (idSecao === 'sec-documentos') prepararTelaDocumentos();
 }
 
 // ==========================================
-// 3. GESTÃO DE USUÁRIOS (RF02 - API REAL)
+// 3. GESTÃO DE USUÁRIOS E ALOCAÇÃO (RF02)
 // ==========================================
 async function carregarUsuarios() {
     const res = await fetch(`${API_URL}/usuarios`);
@@ -119,29 +119,25 @@ async function carregarUsuarios() {
         </tr>
     `).join('');
 }
+
 async function carregarTelaAlocacao() {
     try {
-        // Busca turmas cadastradas
         const resTurmas = await fetch(`${API_URL}/turmas`);
         const turmas = await resTurmas.json();
 
-        // Busca usuários com perfil de professor
         const resUsers = await fetch(`${API_URL}/usuarios`);
         const usuarios = await resUsers.json();
         const professores = usuarios.filter(u => u.perfil === 'PROFESSOR');
 
-        // Preenche o select de turmas
         const selectTurma = document.getElementById('select-aloca-turma');
         selectTurma.innerHTML = turmas.length > 0 
             ? turmas.map(t => `<option value="${t.id}">${t.codigo} - ${t.disciplinaNome} (Atual: ${t.professorNome || 'Nenhum'})</option>`).join('')
             : '<option value="">Nenhuma turma cadastrada</option>';
 
-        // Preenche o select de professores
         const selectProf = document.getElementById('select-aloca-prof');
         selectProf.innerHTML = professores.length > 0
             ? professores.map(p => `<option value="${p.id}">${p.nome} (${p.email})</option>`).join('')
             : '<option value="">Nenhum professor cadastrado no sistema</option>';
-
     } catch (e) {
         console.error("Erro ao carregar dados para alocação:", e);
     }
@@ -163,27 +159,13 @@ async function salvarAlocacaoProfessor(event) {
 
     if (res.ok) {
         alert('Professor alocado com sucesso na turma!');
-        carregarTelaAlocacao(); // Recarrega os dados atualizados
+        carregarTelaAlocacao();
     } else {
         const erro = await res.text();
         alert('Erro ao alocar professor: ' + erro);
     }
 }
-async function salvarAlocacaoProfessor(event) {
-    event.preventDefault();
-    const turmaId = document.getElementById('select-aloca-turma').value;
-    const profId = document.getElementById('select-aloca-prof').value;
 
-    const res = await fetch(`${API_URL}/turmas/${turmaId}/professor/${profId}`, {
-        method: 'PUT'
-    });
-
-    if (res.ok) {
-        alert('Professor alocado com sucesso na turma!');
-    } else {
-        alert('Erro ao alocar professor.');
-    }
-}
 async function cadastrarUsuario(event) {
     event.preventDefault();
     const payload = {
@@ -214,6 +196,22 @@ async function alternarStatusUsuario(id) {
     await fetch(`${API_URL}/usuarios/${id}/status`, { method: 'PATCH' });
     carregarUsuarios();
 }
+
+// ==========================================
+// 4. CHAMADA DIÁRIA (PROFESSOR)
+// ==========================================
+async function carregarTurmasParaSelecaoChamada() {
+    const res = await fetch(`${API_URL}/turmas`);
+    const turmas = await res.json();
+    const select = document.getElementById('select-turma-chamada');
+    
+    select.innerHTML = turmas.map(t => `<option value="${t.id}">${t.codigo} - ${t.disciplinaNome}</option>`).join('');
+    
+    if (turmas.length > 0) {
+        carregarAlunosParaChamada();
+    }
+}
+
 async function carregarAlunosParaChamada() {
     const turmaId = document.getElementById('select-turma-chamada').value;
     const res = await fetch(`${API_URL}/matriculas/turma/${turmaId}`);
@@ -221,6 +219,11 @@ async function carregarAlunosParaChamada() {
     
     const matriculas = await res.json();
     
+    if (matriculas.length === 0) {
+        alunos.innerHTML = '<p class="mt-20">Nenhum aluno matriculado nesta turma ainda.</p>';
+        return;
+    }
+
     alunos.innerHTML = matriculas.map(m => `
         <div class="card-item" style="display: flex; justify-content: space-between; align-items: center;">
             <span>${m.aluno.nome} (Matrícula: ${m.aluno.matricula})</span>
@@ -248,50 +251,45 @@ async function enviarChamada() {
         alert('Erro ao salvar chamada.');
     }
 }
+
 // ==========================================
-// 4. MATRÍCULA E BOLETIM (RF03 / RF05 - API REAL)
+// 5. MATRÍCULA E BOLETIM (RF03 / RF05 - API REAL)
 // ==========================================
 async function carregarTurmasParaMatricula() {
-    const res = await fetch(`${API_URL}/turmas`);
-    const turmas = await res.json();
     const div = document.getElementById('lista-turmas-disponiveis');
+    try {
+        const [resTurmas, resMatriculas] = await Promise.all([
+            fetch(`${API_URL}/turmas`),
+            fetch(`${API_URL}/matriculas/aluno/${usuarioAtual.id}`)
+        ]);
 
-    div.innerHTML = turmas.map(t => `
-        <div class="card-item">
-            <h3>${t.codigo} - ${t.disciplinaNome}</h3>
-            <p><strong>Docente:</strong> ${t.professorNome}</p>
-            <p><strong>Horário:</strong> ${t.horario}</p>
-            <p><strong>Vagas:</strong> ${t.vagasDisponiveis} / ${t.vagasTotais}</p>
-            <button onclick="efetivarMatricula(${t.id})" class="mt-20">Confirmar Matrícula</button>
-        </div>
-    `).join('');
-}
-// async function efetivarMatricula(turmaId) {
-//     const res = await fetch(`${API_URL}/matriculas`, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ alunoId: usuarioAtual.id, turmaId: turmaId })
-//     });
+        const todasTurmas = await resTurmas.json();
+        const minhasMatriculas = await resMatriculas.json();
 
-//     if (res.ok) {
-//         alert('Matrícula realizada com sucesso!');
-//         carregarTurmasParaMatricula();
-//     } else {
-//         const erroMsg = await res.text();
-//         alert('Erro na matrícula: ' + erroMsg);
-//     }
-// }
-async function carregarTurmasParaSelecaoChamada() {
-    const res = await fetch(`${API_URL}/turmas`);
-    const turmas = await res.json();
-    const select = document.getElementById('select-turma-chamada');
-    
-    select.innerHTML = turmas.map(t => `<option value="${t.id}">${t.codigo} - ${t.disciplinaNome}</option>`).join('');
-    
-    if (turmas.length > 0) {
-        carregarAlunosParaChamada();
+        const idsJaMatriculados = minhasMatriculas.map(m => m.turma.id);
+        const turmasDisponiveis = todasTurmas.filter(t => !idsJaMatriculados.includes(t.id));
+
+        if (turmasDisponiveis.length === 0) {
+            div.innerHTML = '<div class="card-item"><p>Você já está matriculado em todas as turmas disponíveis!</p></div>';
+            return;
+        }
+
+        div.innerHTML = turmasDisponiveis.map(t => `
+            <div class="card-item">
+                <h3>${t.codigo} - ${t.disciplinaNome}</h3>
+                <p><strong>Docente:</strong> ${t.professorNome}</p>
+                <p><strong>Horário:</strong> ${t.horario}</p>
+                <p><strong>Vagas:</strong> ${t.vagasDisponiveis} / ${t.vagasTotais}</p>
+                <button onclick="efetivarMatricula(${t.id})" class="mt-20" ${t.vagasDisponiveis <= 0 ? 'disabled' : ''}>
+                    ${t.vagasDisponiveis > 0 ? 'Confirmar Matrícula' : 'Turma Lotada'}
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Erro ao carregar turmas:', error);
     }
 }
+
 async function efetivarMatricula(turmaId) {
     const res = await fetch(`${API_URL}/matriculas`, {
         method: 'POST',
@@ -300,10 +298,10 @@ async function efetivarMatricula(turmaId) {
     });
 
     if (res.ok) {
-        alert('Matrícula realizada! Vaga descontada com sucesso.');
+        alert('Matrícula realizada com sucesso!');
         carregarTurmasParaMatricula();
     } else {
-        alert('Não foi possível matricular: ' + await res.text());
+        alert('Não foi possível realizar a matrícula: ' + await res.text());
     }
 }
 
@@ -319,14 +317,14 @@ async function carregarBoletimAluno() {
             <td>${m.nota1 ?? '-'}</td>
             <td>${m.nota2 ?? '-'}</td>
             <td><strong>${m.mediaFinal ?? '-'}</strong></td>
-            <td>${m.percentualFrequencia ? m.percentualFrequencia + '%' : '-'}</td>
+            <td>${m.percentualFrequencia != null ? m.percentualFrequencia + '%' : '-'}</td>
             <td><strong>${m.situacao}</strong></td>
         </tr>
     `).join('');
 }
 
 // ==========================================
-// 5. LANÇAMENTO DE NOTAS (RF04 - API REAL)
+// 6. LANÇAMENTO DE NOTAS (RF04 - API REAL)
 // ==========================================
 async function carregarTurmasProfessor() {
     const res = await fetch(`${API_URL}/turmas`);
@@ -346,9 +344,9 @@ async function carregarAlunosTurma() {
         <tr>
             <td>${m.aluno.nome}</td>
             <td>${m.aluno.matricula}</td>
-            <td><input type="number" step="0.1" id="n1-${m.id}" value="${m.nota1 || ''}" style="width:70px"></td>
-            <td><input type="number" step="0.1" id="n2-${m.id}" value="${m.nota2 || ''}" style="width:70px"></td>
-            <td><input type="number" step="1" id="fq-${m.id}" value="${m.percentualFrequencia || ''}" style="width:70px"></td>
+            <td><input type="number" step="0.1" id="n1-${m.id}" value="${m.nota1 ?? ''}" style="width:70px"></td>
+            <td><input type="number" step="0.1" id="n2-${m.id}" value="${m.nota2 ?? ''}" style="width:70px"></td>
+            <td><input type="number" step="1" id="fq-${m.id}" value="${m.percentualFrequencia ?? ''}" style="width:70px"></td>
             <td>Média: <strong>${m.mediaFinal ?? '-'}</strong> (${m.situacao})</td>
             <td><button onclick="salvarNota(${m.id})">Salvar</button></td>
         </tr>
@@ -376,13 +374,43 @@ async function salvarNota(matriculaId) {
 }
 
 // ==========================================
-// 6. MÓDULOS COMPLEMENTARES (RF06 a RF11)
+// 7. MÓDULOS COMPLEMENTARES (RF06 a RF11)
 // ==========================================
+async function prepararTelaDocumentos() {
+    const boxSeletor = document.getElementById('box-seletor-aluno-doc');
+    const selectAluno = document.getElementById('select-aluno-documento');
+    document.getElementById('area-documento-gerado').classList.add('hidden');
+
+    if (usuarioAtual.perfil === 'SECRETARIA') {
+        boxSeletor.classList.remove('hidden');
+        const res = await fetch(`${API_URL}/usuarios`);
+        const usuarios = await res.json();
+        const alunos = usuarios.filter(u => u.perfil === 'ALUNO');
+
+        selectAluno.innerHTML = alunos.map(a =>
+            `<option value="${a.nome}">${a.nome} (Matrícula: ${a.matricula})</option>`
+        ).join('');
+    } else {
+        boxSeletor.classList.add('hidden');
+    }
+}
+
 async function emitirDocumento(tipo) {
+    let nomeParaDocumento = usuarioAtual.nome;
+
+    if (usuarioAtual.perfil === 'SECRETARIA') {
+        const selectAluno = document.getElementById('select-aluno-documento');
+        if (!selectAluno.value) {
+            alert('Selecione um aluno antes de emitir o documento.');
+            return;
+        }
+        nomeParaDocumento = selectAluno.value;
+    }
+
     const res = await fetch(`${API_URL}/documentos/emitir`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo, alunoNome: usuarioAtual.nome })
+        body: JSON.stringify({ tipo, alunoNome: nomeParaDocumento })
     });
     const doc = await res.json();
     const box = document.getElementById('area-documento-gerado');
@@ -395,7 +423,6 @@ async function emitirDocumento(tipo) {
         <button onclick="window.print()" class="mt-20">Imprimir / Salvar PDF</button>
     `;
 }
-
 async function carregarDisciplinas() {
     const res = await fetch(`${API_URL}/disciplinas`);
     const lista = await res.json();
@@ -415,12 +442,16 @@ async function cadastrarDisciplina(event) {
             ementa: document.getElementById('disc-ementa').value
         })
     });
+    document.getElementById('disc-nome').value = '';
+    document.getElementById('disc-ch').value = '';
+    document.getElementById('disc-ementa').value = '';
     carregarDisciplinas();
 }
 
 function enviarAvaliacaoDocente(event) {
     event.preventDefault();
     alert('Avaliação anônima registrada com sucesso (RN08)!');
+    event.target.reset();
 }
 
 async function registrarDenuncia(event) {
@@ -464,5 +495,7 @@ async function publicarAviso(event) {
             conteudo: document.getElementById('aviso-conteudo').value
         })
     });
+    document.getElementById('aviso-titulo').value = '';
+    document.getElementById('aviso-conteudo').value = '';
     carregarAvisos();
 }

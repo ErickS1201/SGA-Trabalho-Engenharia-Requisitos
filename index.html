@@ -102,6 +102,10 @@
                 <!-- RF06: EMISSÃO DE DOCUMENTOS (ALUNO / SECRETARIA) -->
                 <section id="sec-documentos" class="tela-modulo hidden">
                     <h2>Emissão de Documentos Acadêmicos (RF06)</h2>
+                    <div id="box-seletor-aluno-doc" class="hidden" style="margin-bottom: 15px; max-width: 400px;">
+                        <label for="select-aluno-documento"><strong>Selecione o Aluno:</strong></label>
+                        <select id="select-aluno-documento" style="width: 100%; padding: 8px; margin-top: 5px;"></select>
+                    </div>
                     <div class="acoes-doc">
                         <button onclick="emitirDocumento('DECLARACAO_MATRICULA')">Gerar Declaração de Matrícula</button>
                         <button onclick="emitirDocumento('HISTORICO_ESCOLAR')">Gerar Histórico Escolar</button>
@@ -170,9 +174,23 @@
                     <p>Formulário anônimo de avaliação institucional (Escala Likert 1 a 5).</p>
                     <form onsubmit="enviarAvaliacaoDocente(event)" class="form-vertical">
                         <label>1. Domínio do conteúdo pelo docente:</label>
-                        <select id="av-q1"><option value="5">5 - Excelente</option><option value="4">4 - Bom</option><option value="3">3 - Regular</option></select>
+                        <select id="av-q1">
+                            <option value="5">5 - Excelente</option>
+                            <option value="4">4 - Bom</option>
+                            <option value="3">3 - Regular</option>
+                            <option value="2">2 - Insuficiente</option>
+                            <option value="1">1 - Péssimo</option>
+                        </select>
                         <label>2. Clareza nas explicações e avaliações:</label>
-                        <select id="av-q2"><option value="5">5 - Excelente</option><option value="4">4 - Bom</option><option value="3">3 - Regular</option></select>
+                        <select id="av-q2">
+                            <option value="5">5 - Excelente</option>
+                            <option value="4">4 - Bom</option>
+                            <option value="3">3 - Regular</option>
+                            <option value="2">2 - Insuficiente</option>
+                            <option value="1">1 - Péssimo</option>
+                        </select>
+                        <label>3. Comentários, críticas ou sugestões (opcional):</label>
+                        <textarea id="av-opiniao" rows="4" placeholder="Escreva aqui sua opinião sobre o docente ou a disciplina..."></textarea>
                         <button type="submit">Enviar Avaliação Anônima</button>
                     </form>
                 </section>
