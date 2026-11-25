@@ -19,13 +19,25 @@ public class DenunciaController {
 
     @GetMapping
     public List<Denuncia> listarDenuncias() {
-        return denunciaRepository.findAll(); // Restrito a coordenação/secretaria
+        return denunciaRepository.findAll();
+    }
+
+    @GetMapping("/protocolo/{protocolo}")
+    public ResponseEntity<?> buscarPorProtocolo(@PathVariable String protocolo) {
+        return denunciaRepository.findAll().stream()
+                .filter(d -> d.getProtocolo() != null && d.getProtocolo().equalsIgnoreCase(protocolo.trim()))
+                .findFirst()
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(404).body("Protocolo não encontrado."));
     }
 
     @PostMapping
     public Denuncia criarDenuncia(@RequestBody Denuncia denuncia) {
         denuncia.setProtocolo("PROT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         denuncia.setStatus("RECEBIDO");
+        if (denuncia.isAnonima()) {
+            denuncia.setAutorNome("Anônimo");
+        }
         return denunciaRepository.save(denuncia);
     }
 

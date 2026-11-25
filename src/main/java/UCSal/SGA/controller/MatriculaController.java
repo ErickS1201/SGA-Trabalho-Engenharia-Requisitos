@@ -28,19 +28,21 @@ public class MatriculaController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // 1. Listar Turmas ofertadas (Contrato API)
     @GetMapping("/turmas")
     public List<Turma> listarTurmas() {
         return turmaRepository.findAll();
     }
 
-    // 2. Listar matrículas de um aluno
+    @GetMapping("/matriculas")
+    public List<Matricula> listarTodasMatriculas() {
+        return matriculaRepository.findAll();
+    }
+
     @GetMapping("/matriculas/aluno/{alunoId}")
     public List<Matricula> listarMatriculasPorAluno(@PathVariable Long alunoId) {
         return matriculaRepository.findByAlunoId(alunoId);
     }
 
-    // 3. Efetivar Matrícula (RF03 / RN03) - Valida vagas e desconta
     @PostMapping("/matriculas")
     public ResponseEntity<?> matricular(@RequestBody Map<String, Long> payload) {
         Long alunoId = payload.get("alunoId");
@@ -57,13 +59,12 @@ public class MatriculaController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Não há vagas disponíveis nesta turma.");
         }
 
-        // Criar matrícula
         Matricula matricula = new Matricula();
         matricula.setAluno(aluno);
         matricula.setTurma(turma);
         matricula.setSituacao("CURSANDO");
+        matricula.setPercentualFrequencia(100.0);
 
-        // Decrementar vaga
         turma.setVagasDisponiveis(turma.getVagasDisponiveis() - 1);
         turmaRepository.save(turma);
 
@@ -71,13 +72,11 @@ public class MatriculaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(matricula);
     }
 
-    // 4. Listar alunos de uma turma para lançamento de notas
     @GetMapping("/matriculas/turma/{turmaId}")
     public List<Matricula> listarAlunosPorTurma(@PathVariable Long turmaId) {
         return matriculaRepository.findByTurmaId(turmaId);
     }
 
-    // 5. Lançamento de Notas e Frequência com Regras de Negócio (RF04 / RN05 / RN06)
     @PutMapping("/matriculas/{matriculaId}/avaliacao")
     public ResponseEntity<?> lancarAvaliacao(@PathVariable Long matriculaId, @RequestBody Map<String, Double> avaliacao) {
         Matricula matricula = matriculaRepository.findById(matriculaId).orElse(null);
@@ -88,19 +87,19 @@ public class MatriculaController {
 
         Double nota1 = avaliacao.get("nota1");
         Double nota2 = avaliacao.get("nota2");
-        Double freq = avaliacao.get("percentualFrequencia");
+
+        // Usa a frequência calculada automaticamente pelas chamadas (ou 100% se ainda não houve chamada)
+        Double freq = matricula.getPercentualFrequencia() != null ? matricula.getPercentualFrequencia() : 100.0;
+        matricula.setPercentualFrequencia(freq);
 
         matricula.setNota1(nota1);
         matricula.setNota2(nota2);
-        matricula.setPercentualFrequencia(freq);
 
-        // Cálculo da média aritmética simples proposta: (N1 + N2) / 2
-        double mediaFinal = (nota1 + nota2) / 2.0;
+        double mediaFinal = Math.round(((nota1 + nota2) / 2.0) * 10.0) / 10.0;
         matricula.setMediaFinal(mediaFinal);
 
-        // Aplicação das regras de negócio acadêmicas (RN05 e RN06)[cite: 35, 36]
         if (freq < 75.0) {
-            matricula.setSituacao("REPROVADO_FREQUENCIA"); // Frequência inferior a 75% bloqueia aprovação direta[cite: 35, 36]
+            matricula.setSituacao("REPROVADO_FREQUENCIA");
         } else if (mediaFinal >= 7.0) {
             matricula.setSituacao("APROVADO");
         } else if (mediaFinal >= 4.0) {

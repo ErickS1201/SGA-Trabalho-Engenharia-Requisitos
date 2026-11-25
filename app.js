@@ -45,7 +45,7 @@ function logout() {
 }
 
 // ==========================================
-// 2. NAVEGAÇÃO DINÂMICA POR PERFIL
+// 2. NAVEGAÇÃO DINÂMICO POR PERFIL
 // ==========================================
 function montarMenuPorPerfil(perfil) {
     const menu = document.getElementById('menu-navegacao');
@@ -56,14 +56,14 @@ function montarMenuPorPerfil(perfil) {
         { id: 'sec-usuarios', label: 'Gestão de Usuários', perfis: ['SECRETARIA', 'ADMIN'] },
         { id: 'sec-matricula', label: 'Matrícula em Turmas', perfis: ['ALUNO'] },
         { id: 'sec-boletim', label: 'Boletim e Frequência', perfis: ['ALUNO'] },
-        { id: 'sec-notas', label: 'Lançar Notas/Frequência', perfis: ['PROFESSOR'] },
+        { id: 'sec-chamada', label: 'Realizar Chamada', perfis: ['PROFESSOR'] },
+        { id: 'sec-notas', label: 'Lançar Notas', perfis: ['PROFESSOR'] },
         { id: 'sec-documentos', label: 'Emitir Documentos', perfis: ['ALUNO', 'SECRETARIA'] },
         { id: 'sec-curriculo', label: 'Grade Curricular', perfis: ['COORDENADOR'] },
+        { id: 'sec-alocacao', label: 'Alocar Professores', perfis: ['COORDENADOR', 'ADMIN'] },
         { id: 'sec-avaliacao', label: 'Avaliação Docente', perfis: ['ALUNO'] },
         { id: 'sec-ouvidoria', label: 'Ouvidoria / Denúncias', perfis: ['ALUNO', 'PROFESSOR', 'COORDENADOR'] },
-        { id: 'sec-relatorios', label: 'Relatórios Gerenciais', perfis: ['COORDENADOR', 'ADMIN'] },
-        { id: 'sec-chamada', label: 'Realizar Chamada', perfis: ['PROFESSOR'] },
-        { id: 'sec-alocacao', label: 'Alocar Professores', perfis: ['COORDENADOR', 'ADMIN'] }
+        { id: 'sec-relatorios', label: 'Relatórios Gerenciais', perfis: ['COORDENADOR', 'ADMIN'] }
     ];
 
     let primeiraTela = null;
@@ -94,11 +94,19 @@ function abrirTela(idSecao) {
     if (idSecao === 'sec-chamada') carregarTurmasParaSelecaoChamada();
     if (idSecao === 'sec-boletim') carregarBoletimAluno();
     if (idSecao === 'sec-notas') carregarTurmasProfessor();
+    if (idSecao === 'sec-documentos') prepararTelaDocumentos();
     if (idSecao === 'sec-curriculo') carregarDisciplinas();
     if (idSecao === 'sec-mural') carregarAvisos();
     if (idSecao === 'sec-alocacao') carregarTelaAlocacao();
-    if (idSecao === 'sec-ouvidoria' && usuarioAtual.perfil === 'COORDENADOR') carregarDenuncias();
-    if (idSecao === 'sec-documentos') prepararTelaDocumentos();
+    if (idSecao === 'sec-relatorios') carregarRelatoriosGerenciais();
+    if (idSecao === 'sec-ouvidoria') {
+        document.getElementById('resultado-protocolo').innerHTML = '';
+        if (usuarioAtual.perfil === 'COORDENADOR') {
+            carregarDenuncias();
+        } else {
+            document.getElementById('lista-denuncias-coord').innerHTML = '';
+        }
+    }
 }
 
 // ==========================================
@@ -204,7 +212,11 @@ async function carregarTurmasParaSelecaoChamada() {
     const res = await fetch(`${API_URL}/turmas`);
     const turmas = await res.json();
     const select = document.getElementById('select-turma-chamada');
-    
+    const inputData = document.getElementById('data-chamada');
+    if (inputData && !inputData.value) {
+        inputData.value = new Date().toISOString().split('T')[0];
+    }
+
     select.innerHTML = turmas.map(t => `<option value="${t.id}">${t.codigo} - ${t.disciplinaNome}</option>`).join('');
     
     if (turmas.length > 0) {
@@ -215,38 +227,76 @@ async function carregarTurmasParaSelecaoChamada() {
 async function carregarAlunosParaChamada() {
     const turmaId = document.getElementById('select-turma-chamada').value;
     const res = await fetch(`${API_URL}/matriculas/turma/${turmaId}`);
-    const alunos = document.getElementById('lista-chamada-alunos');
+    const container = document.getElementById('lista-chamada-alunos');
+    const boxAcoes = document.getElementById('box-acoes-chamada');
     
     const matriculas = await res.json();
     
     if (matriculas.length === 0) {
-        alunos.innerHTML = '<p class="mt-20">Nenhum aluno matriculado nesta turma ainda.</p>';
+        container.innerHTML = '<div class="card-item"><p>Nenhum aluno matriculado nesta turma ainda.</p></div>';
+        boxAcoes.classList.add('hidden');
         return;
     }
 
-    alunos.innerHTML = matriculas.map(m => `
-        <div class="card-item" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>${m.aluno.nome} (Matrícula: ${m.aluno.matricula})</span>
-            <label>
-                <input type="checkbox" class="check-presenca" value="${m.id}" checked> Presente
-            </label>
-        </div>
-    `).join('');
+    boxAcoes.classList.remove('hidden');
+    container.innerHTML = `
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th>Aluno</th>
+                    <th>Matrícula</th>
+                    <th>Histórico de Presença</th>
+                    <th>Frequência Atual</th>
+                    <th>Chamada de Hoje</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${matriculas.map(m => {
+                    const freqAtual = m.totalAulasDadas > 0 ? `${m.percentualFrequencia}%` : '100% (Sem aulas)';
+                    const corFreq = (m.totalAulasDadas > 0 && m.percentualFrequencia < 75) ? 'color: #c62828; font-weight: bold;' : 'color: #2e7d32; font-weight: bold;';
+                    return `
+                        <tr>
+                            <td><strong>${m.aluno.nome}</strong></td>
+                            <td>${m.aluno.matricula}</td>
+                            <td>${m.aulasPresenca} / ${m.totalAulasDadas} aulas</td>
+                            <td style="${corFreq}">${freqAtual}</td>
+                            <td>
+                                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <input type="checkbox" class="check-presenca" value="${m.id}" checked> Presente
+                                </label>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function marcarTodosChamada(estado) {
+    document.querySelectorAll('.check-presenca').forEach(cb => cb.checked = estado);
 }
 
 async function enviarChamada() {
     const turmaId = document.getElementById('select-turma-chamada').value;
+    const dataAula = document.getElementById('data-chamada').value;
+    if (!dataAula) {
+        alert('Selecione a data da aula.');
+        return;
+    }
+
     const checkboxes = document.querySelectorAll('.check-presenca:checked');
     const presentes = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
     const res = await fetch(`${API_URL}/chamadas/lancar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turmaId, presentes })
+        body: JSON.stringify({ turmaId, data: dataAula, presentes })
     });
 
     if (res.ok) {
-        alert('Chamada salva e frequência dos alunos atualizada com sucesso!');
+        alert(`Chamada do dia ${dataAula.split('-').reverse().join('/')} salva! Frequência recalculada automaticamente.`);
+        carregarAlunosParaChamada();
     } else {
         alert('Erro ao salvar chamada.');
     }
@@ -305,22 +355,49 @@ async function efetivarMatricula(turmaId) {
     }
 }
 
+function formatarBadgeSituacao(situacao) {
+    const mapa = {
+        'APROVADO': { texto: 'APROVADO', bg: '#e8f5e9', cor: '#2e7d32' },
+        'EXAME_FINAL': { texto: 'AVALIAÇÃO FINAL', bg: '#fff8e1', cor: '#f57f17' },
+        'REPROVADO_FREQUENCIA': { texto: 'REPROVADO POR FALTA', bg: '#ffebee', cor: '#c62828' },
+        'REPROVADO_NOTA': { texto: 'REPROVADO POR NOTA', bg: '#ffebee', cor: '#c62828' },
+        'CURSANDO': { texto: 'CURSANDO', bg: '#e3f2fd', cor: '#1565c0' }
+    };
+    const info = mapa[situacao] || { texto: situacao, bg: '#eceff1', cor: '#37474f' };
+    return `<span style="background: ${info.bg}; color: ${info.cor}; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.82rem;">${info.texto}</span>`;
+}
+
 async function carregarBoletimAluno() {
     const res = await fetch(`${API_URL}/matriculas/aluno/${usuarioAtual.id}`);
     const matriculas = await res.json();
     const tbody = document.getElementById('tabela-boletim');
 
-    tbody.innerHTML = matriculas.map(m => `
-        <tr>
-            <td>${m.turma.codigo}</td>
-            <td>${m.turma.disciplinaNome}</td>
-            <td>${m.nota1 ?? '-'}</td>
-            <td>${m.nota2 ?? '-'}</td>
-            <td><strong>${m.mediaFinal ?? '-'}</strong></td>
-            <td>${m.percentualFrequencia != null ? m.percentualFrequencia + '%' : '-'}</td>
-            <td><strong>${m.situacao}</strong></td>
-        </tr>
-    `).join('');
+    if (matriculas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8">Você ainda não está matriculado em nenhuma disciplina.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = matriculas.map(m => {
+        const freqTexto = m.totalAulasDadas > 0
+            ? `${m.percentualFrequencia}%`
+            : (m.percentualFrequencia != null ? `${m.percentualFrequencia}%` : '100%');
+        const presencasTexto = m.totalAulasDadas > 0
+            ? `${m.aulasPresenca}/${m.totalAulasDadas}`
+            : '0/0';
+
+        return `
+            <tr>
+                <td>${m.turma.codigo}</td>
+                <td><strong>${m.turma.disciplinaNome}</strong></td>
+                <td>${m.nota1 != null ? m.nota1.toFixed(1) : '-'}</td>
+                <td>${m.nota2 != null ? m.nota2.toFixed(1) : '-'}</td>
+                <td><strong>${m.mediaFinal != null ? m.mediaFinal.toFixed(1) : '-'}</strong></td>
+                <td>${presencasTexto}</td>
+                <td>${freqTexto}</td>
+                <td>${formatarBadgeSituacao(m.situacao)}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // ==========================================
@@ -340,33 +417,48 @@ async function carregarAlunosTurma() {
     const alunos = await res.json();
     const tbody = document.getElementById('tabela-lancamento-notas');
 
-    tbody.innerHTML = alunos.map(m => `
-        <tr>
-            <td>${m.aluno.nome}</td>
-            <td>${m.aluno.matricula}</td>
-            <td><input type="number" step="0.1" id="n1-${m.id}" value="${m.nota1 ?? ''}" style="width:70px"></td>
-            <td><input type="number" step="0.1" id="n2-${m.id}" value="${m.nota2 ?? ''}" style="width:70px"></td>
-            <td><input type="number" step="1" id="fq-${m.id}" value="${m.percentualFrequencia ?? ''}" style="width:70px"></td>
-            <td>Média: <strong>${m.mediaFinal ?? '-'}</strong> (${m.situacao})</td>
-            <td><button onclick="salvarNota(${m.id})">Salvar</button></td>
-        </tr>
-    `).join('');
+    if (alunos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">Nenhum aluno matriculado nesta turma.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = alunos.map(m => {
+        const freqCalculada = m.totalAulasDadas > 0
+            ? `${m.percentualFrequencia}% (${m.aulasPresenca}/${m.totalAulasDadas})`
+            : '100% (Sem chamadas)';
+
+        return `
+            <tr>
+                <td>${m.aluno.nome}</td>
+                <td>${m.aluno.matricula}</td>
+                <td><input type="number" step="0.1" min="0" max="10" id="n1-${m.id}" value="${m.nota1 ?? ''}" style="width:70px"></td>
+                <td><input type="number" step="0.1" min="0" max="10" id="n2-${m.id}" value="${m.nota2 ?? ''}" style="width:70px"></td>
+                <td><strong>${freqCalculada}</strong></td>
+                <td>Média: <strong>${m.mediaFinal != null ? m.mediaFinal.toFixed(1) : '-'}</strong><br>${formatarBadgeSituacao(m.situacao)}</td>
+                <td><button onclick="salvarNota(${m.id})">Salvar</button></td>
+            </tr>
+        `;
+    }).join('');
 }
 
 async function salvarNota(matriculaId) {
     const nota1 = parseFloat(document.getElementById(`n1-${matriculaId}`).value);
     const nota2 = parseFloat(document.getElementById(`n2-${matriculaId}`).value);
-    const percentualFrequencia = parseFloat(document.getElementById(`fq-${matriculaId}`).value);
+
+    if (isNaN(nota1) || isNaN(nota2) || nota1 < 0 || nota1 > 10 || nota2 < 0 || nota2 > 10) {
+        alert('Informe notas válidas entre 0 e 10.');
+        return;
+    }
 
     const res = await fetch(`${API_URL}/matriculas/${matriculaId}/avaliacao`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nota1, nota2, percentualFrequencia })
+        body: JSON.stringify({ nota1, nota2 })
     });
 
     if (res.ok) {
         const atualizada = await res.json();
-        alert(`Lançado! Média: ${atualizada.mediaFinal} | Situação: ${atualizada.situacao}`);
+        alert(`Notas salvas! Média: ${atualizada.mediaFinal} | Situação: ${atualizada.situacao}`);
         carregarAlunosTurma();
     } else {
         alert('Erro ao salvar notas.');
@@ -374,7 +466,7 @@ async function salvarNota(matriculaId) {
 }
 
 // ==========================================
-// 7. MÓDULOS COMPLEMENTARES (RF06 a RF11)
+// 7. DOCUMENTOS, GRADE, AVALIAÇÃO, OUVIDORIA E RELATÓRIOS
 // ==========================================
 async function prepararTelaDocumentos() {
     const boxSeletor = document.getElementById('box-seletor-aluno-doc');
@@ -423,12 +515,26 @@ async function emitirDocumento(tipo) {
         <button onclick="window.print()" class="mt-20">Imprimir / Salvar PDF</button>
     `;
 }
+
 async function carregarDisciplinas() {
     const res = await fetch(`${API_URL}/disciplinas`);
     const lista = await res.json();
-    document.getElementById('lista-disciplinas').innerHTML = lista.map(d => 
-        `<li><strong>${d.nome}</strong> (${d.cargaHoraria}h) - ${d.ementa}</li>`
-    ).join('');
+    document.getElementById('lista-disciplinas').innerHTML = lista.map(d => `
+        <div class="card-item" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
+                    <h4>${d.nome}</h4>
+                    <span style="background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">
+                        ${d.cargaHoraria}h
+                    </span>
+                </div>
+                <p style="margin-top: 8px; color: #444;">${d.ementa}</p>
+            </div>
+            <button onclick="excluirDisciplina(${d.idDisciplina})" style="margin-top: 12px; background-color: #c62828; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; align-self: flex-start;">
+                Remover Disciplina
+            </button>
+        </div>
+    `).join('');
 }
 
 async function cadastrarDisciplina(event) {
@@ -448,6 +554,12 @@ async function cadastrarDisciplina(event) {
     carregarDisciplinas();
 }
 
+async function excluirDisciplina(id) {
+    if (!confirm('Remover esta disciplina da grade curricular?')) return;
+    await fetch(`${API_URL}/disciplinas/${id}`, { method: 'DELETE' });
+    carregarDisciplinas();
+}
+
 function enviarAvaliacaoDocente(event) {
     event.preventDefault();
     alert('Avaliação anônima registrada com sucesso (RN08)!');
@@ -456,25 +568,99 @@ function enviarAvaliacaoDocente(event) {
 
 async function registrarDenuncia(event) {
     event.preventDefault();
+    const anonima = document.getElementById('denuncia-anonima').checked;
     const res = await fetch(`${API_URL}/denuncias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+            categoria: document.getElementById('denuncia-categoria').value,
             descricao: document.getElementById('denuncia-texto').value,
-            anonima: document.getElementById('denuncia-anonima').checked
+            anonima: anonima,
+            autorNome: anonima ? 'Anônimo' : `${usuarioAtual.nome} (${usuarioAtual.perfil})`
         })
     });
     const d = await res.json();
-    alert(`Denúncia registrada sob o protocolo: ${d.protocolo}`);
+    document.getElementById('input-busca-protocolo').value = d.protocolo;
+    alert(`Manifestação registrada! Guarde seu protocolo para acompanhamento: ${d.protocolo}`);
     document.getElementById('denuncia-texto').value = '';
+    if (usuarioAtual.perfil === 'COORDENADOR') carregarDenuncias();
+}
+
+async function consultarProtocolo() {
+    const prot = document.getElementById('input-busca-protocolo').value.trim();
+    const box = document.getElementById('resultado-protocolo');
+    if (!prot) return;
+
+    const res = await fetch(`${API_URL}/denuncias/protocolo/${encodeURIComponent(prot)}`);
+    if (res.ok) {
+        const d = await res.json();
+        box.innerHTML = `
+            <div style="background: #f5f7fa; padding: 12px; border-radius: 6px; border-left: 4px solid #1976d2;">
+                <p><strong>Protocolo:</strong> ${d.protocolo}</p>
+                <p><strong>Categoria:</strong> ${d.categoria || 'Geral'}</p>
+                <p><strong>Status Atual:</strong> <strong>${d.status}</strong></p>
+                <p style="margin-top: 6px; font-size: 0.9rem;">${d.descricao}</p>
+            </div>
+        `;
+    } else {
+        box.innerHTML = `<p style="color: #c62828;">Protocolo não encontrado. Verifique o código digitado.</p>`;
+    }
 }
 
 async function carregarDenuncias() {
     const res = await fetch(`${API_URL}/denuncias`);
     const lista = await res.json();
-    document.getElementById('lista-denuncias-coord').innerHTML = '<h3>Manifestações Recebidas</h3>' + lista.map(d =>
-        `<div class="card-item mt-20"><strong>Protocolo: ${d.protocolo}</strong> (${d.status})<p>${d.descricao}</p></div>`
-    ).join('');
+    const container = document.getElementById('lista-denuncias-coord');
+
+    if (lista.length === 0) {
+        container.innerHTML = '<div class="card-item"><h3>Caixa de Entrada da Ouvidoria</h3><p class="mt-20">Nenhuma manifestação registrada até o momento.</p></div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="card-item">
+            <h3>Gestão de Manifestações Recebidas (${lista.length})</h3>
+            <table class="tabela mt-20">
+                <thead>
+                    <tr>
+                        <th>Protocolo</th>
+                        <th>Categoria</th>
+                        <th>Remetente</th>
+                        <th>Relato</th>
+                        <th>Status</th>
+                        <th>Atualizar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lista.map(d => `
+                        <tr>
+                            <td><strong>${d.protocolo}</strong></td>
+                            <td>${d.categoria || 'Geral'}</td>
+                            <td>${d.anonima ? '<em>Anônimo</em>' : (d.autorNome || 'Identificado')}</td>
+                            <td>${d.descricao}</td>
+                            <td><strong>${d.status}</strong></td>
+                            <td>
+                                <select onchange="alterarStatusDenuncia(${d.idDenuncia}, this.value)" style="padding: 5px;">
+                                    <option value="RECEBIDO" ${d.status === 'RECEBIDO' ? 'selected' : ''}>RECEBIDO</option>
+                                    <option value="EM_ANALISE" ${d.status === 'EM_ANALISE' ? 'selected' : ''}>EM_ANALISE</option>
+                                    <option value="RESOLVIDO" ${d.status === 'RESOLVIDO' ? 'selected' : ''}>RESOLVIDO</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function alterarStatusDenuncia(id, novoStatus) {
+    await fetch(`${API_URL}/denuncias/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: novoStatus })
+    });
+    carregarDenuncias();
 }
 
 async function carregarAvisos() {
@@ -518,14 +704,61 @@ async function publicarAviso(event) {
 
 async function excluirAviso(idAviso) {
     if (!confirm('Deseja realmente excluir este aviso?')) return;
+    const res = await fetch(`${API_URL}/avisos/${idAviso}`, { method: 'DELETE' });
+    if (res.ok) carregarAvisos();
+}
 
-    const res = await fetch(`${API_URL}/avisos/${idAviso}`, {
-        method: 'DELETE'
-    });
+async function carregarRelatoriosGerenciais() {
+    const [resUsuarios, resTurmas, resMatriculas] = await Promise.all([
+        fetch(`${API_URL}/usuarios`),
+        fetch(`${API_URL}/turmas`),
+        fetch(`${API_URL}/matriculas`)
+    ]);
 
-    if (res.ok) {
-        carregarAvisos();
-    } else {
-        alert('Erro ao excluir o aviso.');
-    }
+    const usuarios = await resUsuarios.json();
+    const turmas = await resTurmas.json();
+    const matriculas = await resMatriculas.json();
+
+    const totalAlunos = usuarios.filter(u => u.perfil === 'ALUNO').length;
+    const avaliadas = matriculas.filter(m => m.mediaFinal != null);
+    const aprovados = avaliadas.filter(m => m.situacao === 'APROVADO').length;
+    const taxaAprovacao = avaliadas.length > 0 ? ((aprovados / avaliadas.length) * 100).toFixed(1) + '%' : 'N/A (sem notas)';
+
+    const comFreq = matriculas.filter(m => m.percentualFrequencia != null);
+    const freqMedia = comFreq.length > 0
+        ? (comFreq.reduce((acc, m) => acc + m.percentualFrequencia, 0) / comFreq.length).toFixed(1) + '%'
+        : '100%';
+
+    const riscoFalta = matriculas.filter(m => m.totalAulasDadas > 0 && m.percentualFrequencia < 75).length;
+
+    document.getElementById('grid-kpis-relatorios').innerHTML = `
+        <div class="kpi-card"><h3>Alunos Ativos</h3><p class="kpi-valor">${totalAlunos}</p></div>
+        <div class="kpi-card"><h3>Matrículas Efetivadas</h3><p class="kpi-valor">${matriculas.length}</p></div>
+        <div class="kpi-card"><h3>Taxa de Aprovação</h3><p class="kpi-valor">${taxaAprovacao}</p></div>
+        <div class="kpi-card"><h3>Frequência Média</h3><p class="kpi-valor">${freqMedia}</p></div>
+        <div class="kpi-card"><h3>Risco por Falta (&lt;75%)</h3><p class="kpi-valor" style="color: ${riscoFalta > 0 ? '#c62828' : '#2e7d32'};">${riscoFalta}</p></div>
+    `;
+
+    document.getElementById('tabela-relatorio-turmas').innerHTML = turmas.map(t => {
+        const matsTurma = matriculas.filter(m => m.turma && m.turma.id === t.id);
+        const fMedia = matsTurma.length > 0
+            ? (matsTurma.reduce((acc, m) => acc + (m.percentualFrequencia ?? 100), 0) / matsTurma.length).toFixed(1) + '%'
+            : '-';
+        const comNota = matsTurma.filter(m => m.mediaFinal != null);
+        const nMedia = comNota.length > 0
+            ? (comNota.reduce((acc, m) => acc + m.mediaFinal, 0) / comNota.length).toFixed(1)
+            : '-';
+
+        return `
+            <tr>
+                <td><strong>${t.codigo}</strong></td>
+                <td>${t.disciplinaNome}</td>
+                <td>${t.professorNome}</td>
+                <td>${matsTurma.length}</td>
+                <td>${t.vagasDisponiveis} / ${t.vagasTotais}</td>
+                <td>${fMedia}</td>
+                <td>${nMedia}</td>
+            </tr>
+        `;
+    }).join('');
 }

@@ -18,7 +18,6 @@
                 <input type="password" id="senha-input" placeholder="Senha" required>
                 <button type="submit">Entrar</button>
             </form>
-            
         </div>
     </div>
 
@@ -76,24 +75,43 @@
                 <!-- RF05: BOLETIM E HISTÓRICO (ALUNO) -->
                 <section id="sec-boletim" class="tela-modulo hidden">
                     <h2>Meu Boletim e Frequência (RF05)</h2>
+                    <p style="color: #555; margin-bottom: 12px;">Critério institucional (RN05/RN06): Média mínima <strong>7,0</strong> e frequência mínima de <strong>75%</strong>.</p>
                     <table class="tabela">
                         <thead>
-                            <tr><th>Código</th><th>Disciplina</th><th>Nota 1</th><th>Nota 2</th><th>Média</th><th>Freq (%)</th><th>Situação</th></tr>
+                            <tr>
+                                <th>Código</th>
+                                <th>Disciplina</th>
+                                <th>Nota 1</th>
+                                <th>Nota 2</th>
+                                <th>Média</th>
+                                <th>Presenças</th>
+                                <th>Freq (%)</th>
+                                <th>Situação Atual</th>
+                            </tr>
                         </thead>
                         <tbody id="tabela-boletim"></tbody>
                     </table>
                 </section>
 
-                <!-- RF04: LANÇAMENTO DE NOTAS E FREQUÊNCIA (PROFESSOR) -->
+                <!-- RF04: LANÇAMENTO DE NOTAS (PROFESSOR) -->
                 <section id="sec-notas" class="tela-modulo hidden">
-                    <h2>Lançamento de Notas e Frequência (RF04)</h2>
+                    <h2>Lançamento de Notas (RF04)</h2>
+                    <p style="color: #555; margin-bottom: 12px;">A frequência é calculada automaticamente a partir do registro de chamadas diárias.</p>
                     <div class="filtro-turma">
-                        <label>Selecione a Turma:</label>
+                        <label><strong>Selecione a Turma:</strong></label>
                         <select id="select-turma-prof" onchange="carregarAlunosTurma()"></select>
                     </div>
                     <table class="tabela">
                         <thead>
-                            <tr><th>Aluno</th><th>Matrícula</th><th>Nota 1</th><th>Nota 2</th><th>Freq (%)</th><th>Média / Situação</th><th>Ação</th></tr>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Matrícula</th>
+                                <th>Nota 1</th>
+                                <th>Nota 2</th>
+                                <th>Freq. Calculada</th>
+                                <th>Média / Situação</th>
+                                <th>Ação</th>
+                            </tr>
                         </thead>
                         <tbody id="tabela-lancamento-notas"></tbody>
                     </table>
@@ -112,63 +130,84 @@
                     </div>
                     <div id="area-documento-gerado" class="doc-box hidden"></div>
                 </section>
-                <!-- Módulo de Realizar Chamada (Professor) -->
-<div id="sec-chamada" class="tela-modulo hidden">
-    <h2>Registro de Chamada Diária</h2>
-    <p>Selecione a turma para carregar a lista de alunos e computar a presença:</p>
-    
-    <div class="card-item mt-20">
-        <label><strong>Turma:</strong></label>
-        <select id="select-turma-chamada" onchange="carregarAlunosParaChamada()" class="mt-10" style="width: 100%; padding: 8px;">
-            <!-- Preenchido via JavaScript -->
-        </select>
-    </div>
 
-    <div id="lista-chamada-alunos" class="mt-20">
-        <!-- Checkboxes dos alunos aparecem aqui -->
-    </div>
+                <!-- REGISTRO DE CHAMADA DIÁRIA (PROFESSOR) -->
+                <div id="sec-chamada" class="tela-modulo hidden">
+                    <h2>Registro de Chamada Diária</h2>
+                    <p style="color: #555;">Selecione a turma e a data da aula. Cada chamada salva atualiza automaticamente o percentual de frequência dos alunos.</p>
+                    
+                    <div class="card-item mt-20" style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; max-width: 750px;">
+                        <div>
+                            <label><strong>Turma:</strong></label>
+                            <select id="select-turma-chamada" onchange="carregarAlunosParaChamada()" style="width: 100%; padding: 8px; margin-top: 6px;"></select>
+                        </div>
+                        <div>
+                            <label><strong>Data da Aula:</strong></label>
+                            <input type="date" id="data-chamada" style="width: 100%; padding: 7px; margin-top: 6px;" required>
+                        </div>
+                    </div>
 
-    <button onclick="enviarChamada()" class="mt-20" style="padding: 10px 20px; background-color: #2e7d32; color: white; border: none; cursor: pointer;">
-        Salvar Chamada e Atualizar Frequência
-    </button>
-</div>
+                    <div id="lista-chamada-alunos" class="mt-20" style="max-width: 750px;"></div>
 
-<!-- Módulo de Alocar Professor (Coordenador / Admin) -->
-<div id="sec-alocacao" class="tela-modulo hidden">
-    <h2>Atribuição de Docente à Turma</h2>
-    <p>Selecione a turma e o professor responsável pela regência:</p>
-    
-    <div class="card-item mt-20" style="max-width: 600px;">
-        <form onsubmit="salvarAlocacaoProfessor(event)">
-            <label><strong>Turma:</strong></label>
-            <select id="select-aloca-turma" class="mt-10" style="width: 100%; padding: 8px;">
-                <!-- Preenchido via JavaScript -->
-            </select>
+                    <div id="box-acoes-chamada" class="mt-20 hidden" style="max-width: 750px; display: flex; gap: 10px;">
+                        <button onclick="marcarTodosChamada(true)" type="button" style="padding: 10px 15px; background-color: #546e7a; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Marcar Todos Presentes
+                        </button>
+                        <button onclick="enviarChamada()" type="button" style="padding: 10px 20px; background-color: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                            Salvar Chamada e Recalcular Frequência
+                        </button>
+                    </div>
+                </div>
 
-            <label class="mt-20"><strong>Professor:</strong></label>
-            <select id="select-aloca-prof" class="mt-10" style="width: 100%; padding: 8px;" required>
-                <!-- Preenchido via JavaScript -->
-            </select>
+                <!-- ALOCAR PROFESSOR (COORDENADOR / ADMIN) -->
+                <div id="sec-alocacao" class="tela-modulo hidden">
+                    <h2>Atribuição de Docente à Turma</h2>
+                    <p>Selecione a turma e o professor responsável pela regência:</p>
+                    
+                    <div class="card-item mt-20" style="max-width: 600px;">
+                        <form onsubmit="salvarAlocacaoProfessor(event)" class="form-vertical">
+                            <label><strong>Turma:</strong></label>
+                            <select id="select-aloca-turma" style="width: 100%; padding: 8px;"></select>
 
-            <button type="submit" class="mt-20" style="padding: 10px 20px; background-color: #1976d2; color: white; border: none; cursor: pointer;">
-                Vincular Professor à Turma
-            </button>
-        </form>
-    </div>
-</div>
+                            <label><strong>Professor:</strong></label>
+                            <select id="select-aloca-prof" style="width: 100%; padding: 8px;" required></select>
+
+                            <button type="submit" style="padding: 10px 20px; background-color: #1976d2; color: white; border: none; cursor: pointer;">
+                                Vincular Professor à Turma
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- RF07: GRADE CURRICULAR E DISCIPLINAS (COORDENAÇÃO) -->
                 <section id="sec-curriculo" class="tela-modulo hidden">
                     <h2>Gestão de Disciplinas e Grade Curricular (RF07)</h2>
-                    <form onsubmit="cadastrarDisciplina(event)" class="form-inline">
-                        <input type="text" id="disc-nome" placeholder="Nome da Disciplina" required>
-                        <input type="number" id="disc-ch" placeholder="Carga Horária (h)" required>
-                        <input type="text" id="disc-ementa" placeholder="Ementa resumida" required>
-                        <button type="submit">Adicionar Disciplina</button>
-                    </form>
-                    <ul id="lista-disciplinas" class="lista-simples"></ul>
+                    <div class="card-item" style="max-width: 700px; margin-bottom: 24px;">
+                        <h3 style="margin-bottom: 12px;">Cadastrar Nova Disciplina</h3>
+                        <form onsubmit="cadastrarDisciplina(event)" class="form-vertical">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                                <div>
+                                    <label><strong>Nome da Disciplina:</strong></label>
+                                    <input type="text" id="disc-nome" placeholder="Ex: Engenharia de Software II" style="width: 100%; padding: 8px; margin-top: 4px;" required>
+                                </div>
+                                <div>
+                                    <label><strong>Carga Horária (h):</strong></label>
+                                    <input type="number" id="disc-ch" placeholder="Ex: 60" min="20" max="200" style="width: 100%; padding: 8px; margin-top: 4px;" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label><strong>Ementa da Disciplina:</strong></label>
+                                <textarea id="disc-ementa" rows="3" placeholder="Descreva os conteúdos programáticos, objetivos e competências..." style="width: 100%; padding: 8px; margin-top: 4px; resize: vertical;" required></textarea>
+                            </div>
+                            <button type="submit" style="align-self: flex-start; padding: 10px 20px;">Adicionar à Grade Curricular</button>
+                        </form>
+                    </div>
+
+                    <h3>Disciplinas Ativas na Matriz</h3>
+                    <div id="lista-disciplinas" class="cards-grid mt-20"></div>
                 </section>
 
-                <!-- RF08: AVALIAÇÃO DOCENTE (ALUNO / COORDENAÇÃO) -->
+                <!-- RF08: AVALIAÇÃO DOCENTE (ALUNO) -->
                 <section id="sec-avaliacao" class="tela-modulo hidden">
                     <h2>Avaliação de Desempenho Docente (RF08)</h2>
                     <p>Formulário anônimo de avaliação institucional (Escala Likert 1 a 5).</p>
@@ -190,19 +229,55 @@
                             <option value="1">1 - Péssimo</option>
                         </select>
                         <label>3. Comentários, críticas ou sugestões (opcional):</label>
-                        <textarea id="av-opiniao" rows="4" placeholder="Escreva aqui sua opinião sobre o docente ou a disciplina..."></textarea>
+                        <textarea id="av-opiniao" rows="4" placeholder="Escreva aqui sua opinião sobre o docente ou a disciplina..." style="resize: vertical;"></textarea>
                         <button type="submit">Enviar Avaliação Anônima</button>
                     </form>
                 </section>
 
                 <!-- RF09: OUVIDORIA E DENÚNCIAS (TODOS / COORDENAÇÃO) -->
                 <section id="sec-ouvidoria" class="tela-modulo hidden">
-                    <h2>Canal de Denúncias e Ouvidoria (RF09)</h2>
-                    <form onsubmit="registrarDenuncia(event)" class="form-vertical">
-                        <textarea id="denuncia-texto" rows="4" placeholder="Descreva sua manifestação ou denúncia..." required></textarea>
-                        <label><input type="checkbox" id="denuncia-anonima" checked> Registrar de forma anônima (RN07)</label>
-                        <button type="submit">Registrar Protocolo</button>
-                    </form>
+                    <h2>Canal de Ouvidoria e Denúncias (RF09)</h2>
+                    <p style="color: #555; margin-bottom: 16px;">Canal oficial para sugestões, reclamações ou denúncias com geração de protocolo rastreável (RN07).</p>
+
+                    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start;">
+                        <!-- Formulário de Registro -->
+                        <div class="card-item">
+                            <h3>Nova Manifestação</h3>
+                            <form onsubmit="registrarDenuncia(event)" class="form-vertical mt-20">
+                                <label><strong>Categoria:</strong></label>
+                                <select id="denuncia-categoria" style="padding: 8px;">
+                                    <option value="Infraestrutura / Laboratórios">Infraestrutura / Laboratórios</option>
+                                    <option value="Didática / Avaliação Docente">Didática / Avaliação Docente</option>
+                                    <option value="Atendimento Secretaria / Coordenação">Atendimento Secretaria / Coordenação</option>
+                                    <option value="Ética / Assédio / Conduta">Ética / Assédio / Conduta</option>
+                                    <option value="Sugestão de Melhoria">Sugestão de Melhoria</option>
+                                </select>
+
+                                <label><strong>Relato detalhado:</strong></label>
+                                <textarea id="denuncia-texto" rows="4" placeholder="Descreva os fatos, datas e detalhes da sua manifestação..." style="resize: vertical;" required></textarea>
+
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="denuncia-anonima" checked>
+                                    Registrar de forma anônima (oculta seu nome para a coordenação)
+                                </label>
+
+                                <button type="submit">Gerar Protocolo</button>
+                            </form>
+                        </div>
+
+                        <!-- Consulta de Protocolo -->
+                        <div class="card-item">
+                            <h3>Consultar Protocolo</h3>
+                            <p style="font-size: 0.9rem; color: #555; margin-top: 6px;">Digite o código gerado para acompanhar o status da análise:</p>
+                            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                <input type="text" id="input-busca-protocolo" placeholder="Ex: PROT-A1B2C3D4" style="flex: 1; padding: 8px;">
+                                <button type="button" onclick="consultarProtocolo()">Buscar</button>
+                            </div>
+                            <div id="resultado-protocolo" class="mt-20"></div>
+                        </div>
+                    </div>
+
+                    <!-- Painel exclusivo da Coordenação -->
                     <div id="lista-denuncias-coord" class="mt-20"></div>
                 </section>
 
@@ -229,11 +304,27 @@
 
                 <!-- RF12: RELATÓRIOS GERENCIAIS (COORDENAÇÃO / ADMIN) -->
                 <section id="sec-relatorios" class="tela-modulo hidden">
-                    <h2>Relatórios Gerenciais e Indicadores (RF12)</h2>
-                    <div class="kpis-grid">
-                        <div class="kpi-card"><h3>Taxa de Aprovação</h3><p class="kpi-valor">84,5%</p></div>
-                        <div class="kpi-card"><h3>Frequência Média</h3><p class="kpi-valor">91,2%</p></div>
-                        <div class="kpi-card"><h3>Índice de Evasão</h3><p class="kpi-valor">4,1%</p></div>
+                    <h2>Relatórios Gerenciais e Indicadores em Tempo Real (RF12)</h2>
+                    <p style="color: #555; margin-bottom: 16px;">Indicadores consolidados automaticamente a partir das matrículas, notas e chamadas do semestre.</p>
+                    
+                    <div class="kpis-grid" id="grid-kpis-relatorios"></div>
+
+                    <div class="card-item mt-20">
+                        <h3>Ocupação e Desempenho por Turma</h3>
+                        <table class="tabela mt-20">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Disciplina</th>
+                                    <th>Docente</th>
+                                    <th>Matriculados</th>
+                                    <th>Vagas Livres</th>
+                                    <th>Freq. Média</th>
+                                    <th>Média Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-relatorio-turmas"></tbody>
+                        </table>
                     </div>
                 </section>
 
