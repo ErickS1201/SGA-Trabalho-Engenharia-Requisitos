@@ -29,7 +29,7 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("CPF ou Matrícula já cadastrados.");
         }
         Usuario salvo = usuarioRepository.save(novoUsuario);
-        return ResponseEntity.status(HttpStatus.CREATED).salvo;
+        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
     @PatchMapping("/{id}/status")

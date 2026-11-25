@@ -41,7 +41,7 @@ public class ChamadaController {
             // Atualiza o percentual de frequência
             if (totalAulasDadas > 0) {
                 double perc = ((double) m.getAulasPresenca() / totalAulasDadas) * 100.0;
-                m.setPercentualFrequencia(Math.round(perc));
+                m.setPercentualFrequencia((double) Math.round(perc));
             }
 
             matriculaRepository.save(m);

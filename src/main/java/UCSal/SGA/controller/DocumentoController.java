@@ -25,7 +25,7 @@ public class DocumentoController {
     @GetMapping("/validar/{codigo}")
     public ResponseEntity<?> validarDocumento(@PathVariable String codigo) {
         return documentoRepository.findByCodigoVerificacao(codigo)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(404).body("Documento inválido ou não encontrado."));
     }
 }
