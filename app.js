@@ -486,6 +486,9 @@ async function carregarAvisos() {
         <div class="card-item" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <h4>${a.titulo}</h4>
+                <small style="display: block; color: #555; margin-bottom: 8px;">
+                    Publicado por: <strong>${a.autor || 'Institucional'}</strong>
+                </small>
                 <p>${a.conteudo}</p>
             </div>
             ${podeExcluir ? `
@@ -504,7 +507,8 @@ async function publicarAviso(event) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             titulo: document.getElementById('aviso-titulo').value,
-            conteudo: document.getElementById('aviso-conteudo').value
+            conteudo: document.getElementById('aviso-conteudo').value,
+            autor: `${usuarioAtual.nome} (${usuarioAtual.perfil})`
         })
     });
     document.getElementById('aviso-titulo').value = '';
